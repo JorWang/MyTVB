@@ -14,6 +14,10 @@ import com.tutu.myblbl.feature.player.shouldResetPublishedDanmakuState
 import com.tutu.myblbl.feature.player.danmaku.mergeSortedDanmakuModels
 import com.tutu.myblbl.feature.player.danmaku.canAppendPreparedDanmakuIncrementally
 import com.tutu.myblbl.feature.player.danmaku.canInjectPreparedDanmaku
+import com.tutu.myblbl.feature.player.danmaku.resolveDanmakuTailPatchStartMs
+import com.tutu.myblbl.feature.player.danmaku.DanmakuTimelineOperation
+import com.tutu.myblbl.feature.player.danmaku.resolveDanmakuTimelineOperation
+import com.tutu.myblbl.feature.player.danmaku.rollingDurationMsForTailPatch
 import com.tutu.myblbl.feature.player.danmaku.common.DanmakuDuplicateMergePolicy
 import com.tutu.myblbl.feature.player.danmaku.common.nextDanmakuPreparationGeneration
 import com.tutu.myblbl.model.dm.DmModel
@@ -95,6 +99,57 @@ class DanmakuPreparationGenerationTest {
 
     assertTrue(canAppendPreparedDanmakuIncrementally(true, oldContext, oldContext))
     assertFalse(canAppendPreparedDanmakuIncrementally(true, oldContext, newContext))
+  }
+
+  @Test
+  fun timelineOperationOnlyResetsForNewTimelineOrFilterChange() {
+    val context = DanmakuFilterContext.EMPTY
+
+    assertEquals(
+      DanmakuTimelineOperation.Append,
+      resolveDanmakuTimelineOperation(true, true, context, context),
+    )
+    assertEquals(
+      DanmakuTimelineOperation.ReplaceFutureTail,
+      resolveDanmakuTimelineOperation(false, true, context, context),
+    )
+    assertEquals(
+      DanmakuTimelineOperation.Reset,
+      resolveDanmakuTimelineOperation(true, false, context, context),
+    )
+    assertEquals(
+      DanmakuTimelineOperation.Reset,
+      resolveDanmakuTimelineOperation(true, true, context, context.copy(reportFilters = listOf("blocked"))),
+    )
+  }
+
+  @Test
+  fun mergeConflictPatchesOnlyTheFutureTail() {
+    assertEquals(
+      18_000,
+      resolveDanmakuTailPatchStartMs(
+        firstIncomingTimeMs = 12_000,
+        currentPositionMs = 12_000L,
+      ),
+    )
+  }
+
+  @Test
+  fun tailPatchStartsAtTheMergeBoundaryWhenItIsAlreadyFuture() {
+    assertEquals(
+      28_000,
+      resolveDanmakuTailPatchStartMs(
+        firstIncomingTimeMs = 30_000,
+        currentPositionMs = 5_000L,
+      ),
+    )
+  }
+
+  @Test
+  fun tailPatchGuardMatchesTheActiveSpeedLifetime() {
+    assertEquals(12_000L, rollingDurationMsForTailPatch(1))
+    assertEquals(6_000L, rollingDurationMsForTailPatch(4))
+    assertEquals(2_160L, rollingDurationMsForTailPatch(10))
   }
 
   @Test

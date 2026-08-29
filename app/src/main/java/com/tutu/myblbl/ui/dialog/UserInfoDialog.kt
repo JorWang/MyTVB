@@ -11,7 +11,7 @@ import com.tutu.myblbl.R
 import com.tutu.myblbl.databinding.DialogUserInfoBinding
 import com.tutu.myblbl.model.user.UserDetailInfoModel
 import com.tutu.myblbl.model.user.UserStatModel
-import com.tutu.myblbl.network.session.NetworkSessionGateway
+import com.tutu.myblbl.network.session.SessionStateRepository
 import com.tutu.myblbl.repository.UserRepository
 import com.tutu.myblbl.ui.activity.MainActivity
 import com.tutu.myblbl.feature.detail.UserSpaceFragment
@@ -31,7 +31,7 @@ class UserInfoDialog(context: Context) : AppCompatDialog(context, R.style.Dialog
 
     private val binding = DialogUserInfoBinding.inflate(LayoutInflater.from(context))
     private val userRepository: UserRepository by inject()
-    private val sessionGateway: NetworkSessionGateway by inject()
+    private val sessionGateway: SessionStateRepository by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     init {

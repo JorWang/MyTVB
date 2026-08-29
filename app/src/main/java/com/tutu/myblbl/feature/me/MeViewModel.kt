@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tutu.myblbl.model.user.UserDetailInfoModel
 import com.tutu.myblbl.model.user.UserStatModel
-import com.tutu.myblbl.network.session.NetworkSessionGateway
+import com.tutu.myblbl.network.session.SessionStateRepository
 import com.tutu.myblbl.network.session.SessionState
 import com.tutu.myblbl.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 
 class MeViewModel(
     private val userRepository: UserRepository,
-    private val sessionGateway: NetworkSessionGateway
+    private val sessionGateway: SessionStateRepository
 ) : ViewModel() {
     private var lastLoadedAt = 0L
 

@@ -46,6 +46,7 @@ import com.tutu.myblbl.feature.player.PlayerInstancePool
 import com.tutu.myblbl.feature.player.PlayerLaunchContext
 import com.tutu.myblbl.feature.player.VideoPlayerFragment
 import com.tutu.myblbl.core.common.log.AppLog
+import com.tutu.myblbl.core.common.net.NetworkRecoveryMonitor
 import com.tutu.myblbl.core.ui.navigation.TabBarView
 import com.tutu.myblbl.core.common.content.ContentFilter
 import com.tutu.myblbl.core.common.settings.AppSettingsDataStore
@@ -203,6 +204,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), TabBarView.OnTabClickL
                     "new=${new?.javaClass?.simpleName}#${new?.id} " +
                     "inTabBar=${new?.let { isInsideTabBar(it) } ?: false}"
             )
+        }
+        NetworkRecoveryMonitor.start(this) {
+            appEventHub.dispatch(AppEventHub.Event.NetworkRecovered)
         }
         applyBackgroundImage()
         applyCategoryEntryVisibility()
@@ -440,6 +444,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), TabBarView.OnTabClickL
         }
         val anchorView = currentFocus
         val handled = focusCurrentMainContent(anchorView, preferSpatialEntry = true)
+        return true
+    }
+
+    override fun onSideButtonNavigateRight(): Boolean {
+        val anchorView = currentFocus
+        focusCurrentMainContent(anchorView, preferSpatialEntry = true)
         return true
     }
 

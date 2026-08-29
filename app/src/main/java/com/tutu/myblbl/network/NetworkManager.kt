@@ -2,6 +2,7 @@
 
 package com.tutu.myblbl.network
 
+import com.tutu.myblbl.core.common.json.GsonHolder
 import android.content.Context
 import com.tutu.myblbl.model.BaseResponse
 import com.tutu.myblbl.model.user.UserDetailInfoModel
@@ -91,7 +92,7 @@ object NetworkManager {
     }
 
     private val gson by lazy {
-        NetworkClientFactory.createGson()
+        GsonHolder.CONFIGURED
     }
 
     private val retrofit: Retrofit by lazy {

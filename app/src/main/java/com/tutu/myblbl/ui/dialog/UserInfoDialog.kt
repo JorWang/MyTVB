@@ -9,7 +9,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.tutu.myblbl.R
 import com.tutu.myblbl.databinding.DialogUserInfoBinding
-import com.tutu.myblbl.event.AppEventHub
 import com.tutu.myblbl.model.user.UserDetailInfoModel
 import com.tutu.myblbl.model.user.UserStatModel
 import com.tutu.myblbl.network.session.NetworkSessionGateway
@@ -31,7 +30,6 @@ import org.koin.core.component.inject
 class UserInfoDialog(context: Context) : AppCompatDialog(context, R.style.DialogTheme), KoinComponent {
 
     private val binding = DialogUserInfoBinding.inflate(LayoutInflater.from(context))
-    private val appEventHub: AppEventHub by inject()
     private val userRepository: UserRepository by inject()
     private val sessionGateway: NetworkSessionGateway by inject()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -87,7 +85,6 @@ class UserInfoDialog(context: Context) : AppCompatDialog(context, R.style.Dialog
         binding.buttonSignOut.setOnClickListener {
             sessionGateway.clearUserSession(reason = "userInfoDialog.signOut")
             FileCacheManager.clearUserCaches()
-            appEventHub.dispatch(AppEventHub.Event.UserSessionChanged)
             dismiss()
         }
     }

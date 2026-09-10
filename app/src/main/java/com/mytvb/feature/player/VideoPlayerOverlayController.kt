@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.util.TypedValue
+import com.mytvb.core.ui.base.ScaledTextView
 import com.mytvb.R
 import com.mytvb.model.video.VideoModel
 import com.mytvb.model.video.detail.VideoDetailModel
@@ -32,7 +33,6 @@ import com.mytvb.feature.detail.UserSpaceFragment
 import com.mytvb.core.ui.base.VideoRecyclerViewTuning
 import com.mytvb.core.ui.layout.WrapContentGridLayoutManager
 import com.mytvb.feature.player.view.MyPlayerView
-import androidx.appcompat.widget.AppCompatTextView
 
 @UnstableApi
 class VideoPlayerOverlayController(
@@ -315,9 +315,9 @@ class VideoPlayerOverlayController(
         }
     }
 
-    private fun buildSeasonTab(label: String): AppCompatTextView {
+    private fun buildSeasonTab(label: String): ScaledTextView {
         val res = activity.resources
-        return AppCompatTextView(activity).apply {
+        return ScaledTextView(activity).apply {
             text = label
             setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimension(R.dimen.px24))
             setTextColor(ContextCompat.getColor(activity, R.color.textColor))

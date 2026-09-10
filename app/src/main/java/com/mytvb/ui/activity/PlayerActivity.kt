@@ -42,6 +42,7 @@ import com.mytvb.R
 import com.mytvb.core.common.content.ContentFilter
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.core.ui.base.BaseActivity
+import com.mytvb.core.ui.base.ScaledTextView
 import com.mytvb.core.ui.system.ViewUtils
 import com.mytvb.databinding.FragmentVideoPlayerBinding
 import com.mytvb.event.AppEventHub
@@ -734,6 +735,8 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
         slimTimelineRenderer = SlimTimelineRenderer(bottomProgressBar)
         textClock = binding.textClock
         textSubtitle = binding.textSubtitle
+        // 字幕有独立字号设置，不与 UI 文字缩放叠加
+        ScaledTextView.exempt(textSubtitle)
         textDebug = binding.textDebug
         viewNext = binding.viewNext
         viewRelated = binding.viewRelated

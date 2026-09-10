@@ -46,16 +46,16 @@ abstract class FixSourceSetPathMapTask : DefaultTask() {
 }
 
 android {
-    namespace = "com.tutu.myblbl"
+    namespace = "com.mytvb"
     compileSdk = 35
 
     defaultConfig {
         // 默认包名；可通过 -PapplicationId=xxx 覆盖，用于 fork 版与原版共存安装
-        applicationId = (project.findProperty("applicationId") as? String) ?: "com.tutu.myblbl"
+        applicationId = (project.findProperty("applicationId") as? String) ?: "com.mytvb"
         minSdk = 23
         targetSdk = 35
-        versionCode = 83
-        versionName = "1.6.23"
+        versionCode = 86
+        versionName = "2.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

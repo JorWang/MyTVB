@@ -15,6 +15,7 @@ import com.mytvb.model.live.LiveListWrapper
 import com.mytvb.model.live.LiveRecommendSection
 import com.mytvb.ui.activity.LivePlayerActivity
 import com.mytvb.core.ui.base.BaseFragment
+import com.mytvb.core.ui.base.adaptiveSpanCount
 import com.mytvb.ui.fragment.main.MainNavigationViewModel
 import com.mytvb.core.common.content.ContentFilter
 import com.mytvb.core.ui.focus.SpatialFocusNavigator
@@ -218,7 +219,11 @@ class LiveRecommendFragment : BaseFragment<FragmentLiveBaseListBinding>(), LiveT
 
     private fun applySections(sections: List<LiveRecommendSection>) {
         val applyStartMs = PagePerfLogger.now()
-        val laneHeight = FirstScreenRenderer.estimateVideoCardHeight(binding.recyclerView, spanCount = 4) +
+        // 估算列数须与 LiveRecommendAdapter.ViewHolder 中 lane 的 adaptiveSpanCount() 一致
+        val laneHeight = FirstScreenRenderer.estimateVideoCardHeight(
+            binding.recyclerView,
+            spanCount = resources.adaptiveSpanCount()
+        ) +
             resources.getDimensionPixelSize(R.dimen.px70)
         FirstScreenRenderer.render(
             recyclerView = binding.recyclerView,

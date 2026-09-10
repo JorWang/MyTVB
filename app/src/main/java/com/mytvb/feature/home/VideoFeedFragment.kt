@@ -16,6 +16,7 @@ import com.mytvb.core.common.log.PagePerfLogger
 import com.mytvb.core.navigation.VideoRouteNavigator
 import com.mytvb.core.ui.base.BaseListFragment
 import com.mytvb.core.ui.base.RecyclerViewPoolPrewarmer
+import com.mytvb.core.ui.base.adaptiveSpanCount
 import com.mytvb.core.ui.focus.tv.TvDataChangeReason
 import com.mytvb.core.ui.render.FirstScreenRenderer
 import com.mytvb.event.AppEventHub
@@ -71,7 +72,8 @@ abstract class VideoFeedFragment : BaseListFragment<VideoModel>(), HomeTabPage, 
         )
     }
 
-    override fun getSpanCount(): Int = 4
+    // 超宽屏（如 5120×1600）4 列封面过大，adaptiveSpanCount 统一放宽到 8 列
+    override fun getSpanCount(): Int = resources.adaptiveSpanCount()
 
     override fun loadData(page: Int) {
         latestOpenStartMs = PagePerfLogger.now()

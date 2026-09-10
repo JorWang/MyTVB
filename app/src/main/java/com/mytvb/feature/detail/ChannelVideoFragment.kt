@@ -6,6 +6,7 @@ import com.mytvb.R
 import com.mytvb.core.common.content.ContentFilter
 import com.mytvb.core.navigation.VideoRouteNavigator
 import com.mytvb.core.ui.base.BaseListFragment
+import com.mytvb.core.ui.base.adaptiveSpanCount
 import com.mytvb.core.ui.decoration.GridSpacingItemDecoration
 import com.mytvb.model.video.VideoModel
 import com.mytvb.repository.VideoRepository
@@ -38,7 +39,7 @@ class ChannelVideoFragment : BaseListFragment<VideoModel>(), com.mytvb.ui.activi
     override val enableTvListFocusController: Boolean = true
     override val deferSwipeRefreshUntilFirstDraw: Boolean = true
 
-    override fun getSpanCount(): Int = 4
+    override fun getSpanCount(): Int = resources.adaptiveSpanCount()
 
     override fun initArguments() {
         title = arguments?.getString(ARG_TITLE).orEmpty()

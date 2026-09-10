@@ -25,6 +25,7 @@ import com.mytvb.core.ui.base.BaseAdapter
 import com.mytvb.core.ui.base.BaseFragment
 import com.mytvb.core.ui.base.BaseListFragment
 import com.mytvb.core.ui.base.VideoRecyclerViewTuning
+import com.mytvb.core.ui.base.adaptiveSpanCount
 import com.mytvb.feature.user.FollowUserListFragment
 import com.mytvb.core.ui.layout.WrapContentGridLayoutManager
 import com.mytvb.core.ui.decoration.GridSpacingItemDecoration
@@ -42,6 +43,9 @@ import org.koin.android.ext.android.inject
 
 class UserSpaceFragment : BaseFragment<FragmentUserSpaceBinding>(), com.mytvb.ui.activity.MainActivity.OnVideoBlockedListener {
 
+    // 超宽屏（如 5120×1600）4 列封面过大，adaptiveSpanCount 统一放宽到 8 列
+    private val spanCount by lazy { resources.adaptiveSpanCount() }
+
     private enum class FocusArea {
         BACK,
         FOLLOW,
@@ -52,7 +56,6 @@ class UserSpaceFragment : BaseFragment<FragmentUserSpaceBinding>(), com.mytvb.ui
 
     companion object {
         private const val ARG_MID = "mid"
-        private const val SPAN_COUNT = 4
 
         fun newInstance(mid: Long): UserSpaceFragment {
             return UserSpaceFragment().apply {
@@ -134,12 +137,12 @@ class UserSpaceFragment : BaseFragment<FragmentUserSpaceBinding>(), com.mytvb.ui
             videoAdapter
         )
 
-        val layoutManager = WrapContentGridLayoutManager(requireContext(), SPAN_COUNT)
+        val layoutManager = WrapContentGridLayoutManager(requireContext(), spanCount)
         layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int): Int {
                 return when {
-                    position == 0 -> SPAN_COUNT
-                    concatAdapter.getItemViewType(position) == BaseAdapter.LOAD_MORE_TYPE -> SPAN_COUNT
+                    position == 0 -> spanCount
+                    concatAdapter.getItemViewType(position) == BaseAdapter.LOAD_MORE_TYPE -> spanCount
                     else -> 1
                 }
             }
@@ -150,7 +153,7 @@ class UserSpaceFragment : BaseFragment<FragmentUserSpaceBinding>(), com.mytvb.ui
         if (binding.recyclerViewVideos.itemDecorationCount == 0) {
             binding.recyclerViewVideos.addItemDecoration(
                 GridSpacingItemDecoration(
-                    SPAN_COUNT,
+                    spanCount,
                     resources.getDimensionPixelSize(R.dimen.px20),
                     includeEdge = true
                 )
@@ -541,7 +544,7 @@ class UserSpaceFragment : BaseFragment<FragmentUserSpaceBinding>(), com.mytvb.ui
         tvFocusController = TvListFocusController(
             recyclerView = binding.recyclerViewVideos,
             adapter = OffsetTvFocusableAdapter(videoAdapter) { headerAdapter.itemCount },
-            strategy = GridTvFocusStrategy { SPAN_COUNT },
+            strategy = GridTvFocusStrategy { spanCount },
             canLoadMore = { hasMore },
             loadMore = {
                 if (!isLoading && hasMore) {

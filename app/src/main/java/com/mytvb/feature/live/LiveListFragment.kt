@@ -16,6 +16,7 @@ import com.mytvb.ui.activity.LivePlayerActivity
 import com.mytvb.core.ui.base.BaseFragment
 import com.mytvb.core.ui.base.BaseListFragment
 import com.mytvb.core.ui.base.RecyclerViewPoolPrewarmer
+import com.mytvb.core.ui.base.adaptiveSpanCount
 import com.mytvb.feature.settings.SignInFragment
 import com.mytvb.core.ui.layout.WrapContentGridLayoutManager
 import com.mytvb.core.common.content.ContentFilter
@@ -90,7 +91,7 @@ class LiveListFragment : BaseFragment<FragmentLiveListBinding>(), LiveTabPage {
             }
         )
 
-        val layoutManager = WrapContentGridLayoutManager(requireContext(), 4)
+        val layoutManager = WrapContentGridLayoutManager(requireContext(), resources.adaptiveSpanCount())
         binding.recyclerView.layoutManager = layoutManager
         binding.recyclerView.adapter = adapter
         binding.recyclerView.itemAnimator = null
@@ -209,7 +210,7 @@ class LiveListFragment : BaseFragment<FragmentLiveListBinding>(), LiveTabPage {
                             items = rooms,
                             startMs = currentOpenStartMs,
                             source = "first_screen",
-                            spanCount = 4,
+                            spanCount = resources.adaptiveSpanCount(),
                             setItems = { firstBatch, onCommitted ->
                                 adapter.setData(firstBatch, onCommitted)
                             },

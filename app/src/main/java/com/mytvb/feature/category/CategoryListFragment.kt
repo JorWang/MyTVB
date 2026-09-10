@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.mytvb.model.video.VideoModel
 import com.mytvb.ui.adapter.VideoAdapter
 import com.mytvb.core.ui.base.BaseListFragment
+import com.mytvb.core.ui.base.adaptiveSpanCount
 import com.mytvb.core.common.content.ContentFilter
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.core.ui.focus.tv.TvDataChangeReason
@@ -65,7 +66,7 @@ class CategoryListFragment : BaseListFragment<VideoModel>(), com.mytvb.ui.activi
         )
     }
 
-    override fun getSpanCount(): Int = 4
+    override fun getSpanCount(): Int = resources.adaptiveSpanCount()
 
     override fun loadData(page: Int) {
         if (viewModel.loading.value) {

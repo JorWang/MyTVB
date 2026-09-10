@@ -19,6 +19,7 @@ import com.mytvb.repository.FavoriteRepository
 import com.mytvb.ui.adapter.FavoriteHistoryAdapter
 import com.mytvb.core.ui.base.BaseFragment
 import com.mytvb.core.ui.base.VideoRecyclerViewTuning
+import com.mytvb.core.ui.base.adaptiveSpanCount
 import com.mytvb.core.ui.layout.WrapContentGridLayoutManager
 import com.mytvb.core.ui.decoration.GridSpacingItemDecoration
 import com.mytvb.core.common.content.ContentFilter
@@ -119,12 +120,13 @@ class FavoriteDetailFragment : BaseFragment<FragmentFavoriteDetailBinding>() {
                 tvFocusController?.onDataChanged(TvDataChangeReason.REMOVE_ITEM)
             }
         )
-        binding.recyclerViewVideos.layoutManager = WrapContentGridLayoutManager(requireContext(), 4)
+        val spanCount = resources.adaptiveSpanCount()
+        binding.recyclerViewVideos.layoutManager = WrapContentGridLayoutManager(requireContext(), spanCount)
         binding.recyclerViewVideos.adapter = favoriteAdapter
         VideoRecyclerViewTuning.apply(binding.recyclerViewVideos, favoriteAdapter)
         if (binding.recyclerViewVideos.itemDecorationCount == 0) {
             binding.recyclerViewVideos.addItemDecoration(
-                GridSpacingItemDecoration(4, resources.getDimensionPixelSize(com.mytvb.R.dimen.px20), true)
+                GridSpacingItemDecoration(spanCount, resources.getDimensionPixelSize(com.mytvb.R.dimen.px20), true)
             )
         }
         binding.recyclerViewVideos.addOnScrollListener(object : RecyclerView.OnScrollListener() {

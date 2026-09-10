@@ -20,6 +20,7 @@ import com.mytvb.repository.UserRepository
 import com.mytvb.ui.adapter.SeriesAdapter
 import com.mytvb.core.ui.base.BaseFragment
 import com.mytvb.core.ui.base.RecyclerViewFocusRestoreHelper
+import com.mytvb.core.ui.base.adaptiveSpanCount
 import com.mytvb.feature.series.SeriesDetailFragment
 import com.mytvb.core.ui.layout.WrapContentGridLayoutManager
 import com.mytvb.core.common.cache.FileCacheManager
@@ -84,7 +85,8 @@ class MeSeriesFragment : BaseFragment<FragmentMeTabListBinding>(), MeTabPage {
             }
         }, onTopEdgeUp = ::focusTopTab)
 
-        binding.recyclerView.layoutManager = WrapContentGridLayoutManager(requireContext(), 6)
+        binding.recyclerView.layoutManager =
+            WrapContentGridLayoutManager(requireContext(), resources.adaptiveSpanCount(base = 6, wide = 8))
         binding.recyclerView.adapter = adapter
         binding.recyclerView.setHasFixedSize(true)
         binding.emptyContainer.visibility = View.GONE

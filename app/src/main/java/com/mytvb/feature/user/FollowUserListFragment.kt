@@ -18,6 +18,7 @@ import com.mytvb.model.user.FollowingModel
 import com.mytvb.repository.UserRepository
 import com.mytvb.ui.adapter.FollowUserAdapter
 import com.mytvb.core.ui.base.BaseFragment
+import com.mytvb.core.ui.base.adaptiveSpanCount
 import com.mytvb.core.ui.focus.hasFocusInChildren
 import com.mytvb.core.ui.focus.tv.GridTvFocusStrategy
 import com.mytvb.core.ui.focus.tv.ListAdapterTvFocusBridge
@@ -32,7 +33,6 @@ import org.koin.android.ext.android.inject
 class FollowUserListFragment : BaseFragment<FragmentFollowUserListBinding>() {
 
     companion object {
-        private const val SPAN_COUNT = 8
         const val TYPE_FOLLOWING = 0
         const val TYPE_FOLLOWER = 1
 
@@ -48,6 +48,10 @@ class FollowUserListFragment : BaseFragment<FragmentFollowUserListBinding>() {
             }
         }
     }
+
+    // 用户卡片是“头像+两行文字”，普通屏 4 列、超宽屏 8 列，写死 8 列在窄格
+    // 里昵称/简介都放不下
+    private val spanCount by lazy { resources.adaptiveSpanCount() }
 
     private val appEventHub: AppEventHub by inject()
     private val userRepository: UserRepository by inject()
@@ -93,12 +97,12 @@ class FollowUserListFragment : BaseFragment<FragmentFollowUserListBinding>() {
             onItemClick = ::onUserClick,
             onItemFocused = { position -> lastFocusedPosition = position }
         )
-        binding.recyclerView.layoutManager = WrapContentGridLayoutManager(requireContext(), SPAN_COUNT)
+        binding.recyclerView.layoutManager = WrapContentGridLayoutManager(requireContext(), spanCount)
         binding.recyclerView.adapter = adapter
         if (binding.recyclerView.itemDecorationCount == 0) {
             binding.recyclerView.addItemDecoration(
                 GridSpacingItemDecoration(
-                    SPAN_COUNT,
+                    spanCount,
                     resources.getDimensionPixelSize(R.dimen.px20),
                     includeEdge = true
                 )
@@ -127,7 +131,7 @@ class FollowUserListFragment : BaseFragment<FragmentFollowUserListBinding>() {
         tvFocusController = TvListFocusController(
             recyclerView = binding.recyclerView,
             adapter = ListAdapterTvFocusBridge(adapter) { it.mid.toString() },
-            strategy = GridTvFocusStrategy { SPAN_COUNT },
+            strategy = GridTvFocusStrategy { spanCount },
             canLoadMore = { false },
             loadMore = {}
         )

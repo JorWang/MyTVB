@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.mytvb.R
-import com.mytvb.databinding.CellUserBinding
+import com.mytvb.databinding.CellFollowUserBinding
 import com.mytvb.model.user.FollowingModel
 import com.mytvb.core.ui.image.ImageLoader
 
@@ -42,7 +42,7 @@ class FollowUserAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = CellUserBinding.inflate(
+        val binding = CellFollowUserBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
@@ -57,7 +57,7 @@ class FollowUserAdapter(
     fun getFocusedPosition(): Int = focusedPosition
 
     inner class ViewHolder(
-        private val binding: CellUserBinding
+        private val binding: CellFollowUserBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
         init {

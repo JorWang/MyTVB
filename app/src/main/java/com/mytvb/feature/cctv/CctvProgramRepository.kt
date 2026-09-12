@@ -69,6 +69,6 @@ class CctvProgramRepository(
         private const val CALLBACK_NAME = "setItem1"
         private val DAY_FORMAT = SimpleDateFormat("yyyyMMdd", Locale.US)
         private const val USER_AGENT =
-            "Mozilla/5.0 (Linux; Android 10; TV; MyBili) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36"
+            "Mozilla/5.0 (Linux; Android 10; TV; MyTVB) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36"
     }
 }

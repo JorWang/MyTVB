@@ -199,7 +199,7 @@ androidComponents {
         val renameTask = tasks.register("rename${capitalizedVariantName}Apk", RenameApkTask::class) {
             apkDirectory.set(variant.artifacts.get(com.android.build.api.artifact.SingleArtifact.APK))
             renamedApkDirectory.set(layout.buildDirectory.dir("outputs/renamed_apk/${variant.name}"))
-            appName.set("MyBili")
+            appName.set("MyTVB")
             buildType.set(variant.buildType)
             versionName.set(variant.outputs.single().versionName)
         }

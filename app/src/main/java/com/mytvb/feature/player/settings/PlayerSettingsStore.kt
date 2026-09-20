@@ -13,6 +13,13 @@ enum class AfterPlayMode {
     NEXT_EPISODE
 }
 
+/** 默认字幕三态：关 = 从不自动开；开 = 只要有外挂字幕就自动开；自动 = 仅当视频无内嵌字幕时自动开。 */
+enum class SubtitleDefaultMode {
+    OFF,
+    ON,
+    AUTO
+}
+
 data class PlayerSettings(
     val defaultVideoQualityId: Int? = VideoQualityDefaults.DEFAULT_VIDEO_QUALITY_ID,
     val defaultAudioQualityId: Int? = VideoQualityDefaults.DEFAULT_AUDIO_QUALITY_ID,
@@ -20,7 +27,9 @@ data class PlayerSettings(
     val defaultVideoCodec: VideoCodecEnum? = VideoCodecEnum.HEVC,
     val afterPlayMode: AfterPlayMode = AfterPlayMode.RECOMMEND,
     val exitPlayerWhenPlaybackFinished: Boolean = true,
-    val showSubtitleByDefault: Boolean = false,
+    val subtitleDefaultMode: SubtitleDefaultMode = SubtitleDefaultMode.AUTO,
+    // 用户手动选择过的字幕语言（轨道 lan，如 ai-zh / zh-CN / en-US），自动选择时最优先匹配；空 = 从未手动选过。
+    val subtitlePreferredLan: String = "",
     val subtitleTextSizePx: Int = 45,
     val showBottomProgressBar: Boolean = false,
     val showDebugInfo: Boolean = false,
@@ -58,7 +67,8 @@ object PlayerSettingsStore {
     private const val KEY_VIDEO_CODEC = "video_codec"
     private const val KEY_AFTER_PLAY = "after_play"
     private const val KEY_PLAY_FINISH_EXIT_PLAYER = "play_finish_exit_player"
-    private const val KEY_SHOW_SUBTITLE_DEFAULT = "show_subtitle_default"
+    private const val KEY_SUBTITLE_DEFAULT_MODE = "subtitle_default_mode"
+    private const val KEY_SUBTITLE_PREFERRED_LAN = "subtitle_preferred_lan"
     private const val KEY_SUBTITLE_TEXT_SIZE = "subtitle_text_size"
     private const val KEY_SHOW_RE_FF = "show_re_ff"
     private const val KEY_SHOW_DEBUG = "show_debug"
@@ -88,7 +98,9 @@ object PlayerSettingsStore {
             append("|")
             append(readSetting(KEY_PLAY_FINISH_EXIT_PLAYER).orEmpty())
             append("|")
-            append(readSetting(KEY_SHOW_SUBTITLE_DEFAULT).orEmpty())
+            append(readSetting(KEY_SUBTITLE_DEFAULT_MODE).orEmpty())
+            append("|")
+            append(readSetting(KEY_SUBTITLE_PREFERRED_LAN).orEmpty())
             append("|")
             append(readSetting(KEY_SUBTITLE_TEXT_SIZE).orEmpty())
             append("|")
@@ -145,10 +157,12 @@ object PlayerSettingsStore {
                 readSetting(KEY_PLAY_FINISH_EXIT_PLAYER),
                 defaultValue = true
             ),
-            showSubtitleByDefault = parseToggle(
-                readSetting(KEY_SHOW_SUBTITLE_DEFAULT),
-                defaultValue = false
+            subtitleDefaultMode = parseSubtitleDefaultMode(
+                readSetting(KEY_SUBTITLE_DEFAULT_MODE)
             ),
+            subtitlePreferredLan = readSetting(KEY_SUBTITLE_PREFERRED_LAN)
+                ?.trim()
+                .orEmpty(),
             subtitleTextSizePx = readSetting(KEY_SUBTITLE_TEXT_SIZE)
                 ?.toIntOrNull()
                 ?.coerceIn(30, 60)
@@ -215,6 +229,16 @@ object PlayerSettingsStore {
         lastSettingsSnapshot = null
     }
 
+    /** 记录用户手动选过的字幕语言，作为后续自动选择的最高优先级。 */
+    fun saveSubtitlePreferredLan(lan: String) {
+        val normalized = lan.trim()
+        if (normalized.isBlank()) return
+        if (cachedSettings?.subtitlePreferredLan == normalized) return
+        appSettings.putStringAsync(KEY_SUBTITLE_PREFERRED_LAN, normalized)
+        cachedSettings = cachedSettings?.copy(subtitlePreferredLan = normalized)
+        lastSettingsSnapshot = null
+    }
+
     private fun AfterPlayMode.toSettingValue(): String {
         return when (this) {
             AfterPlayMode.NOTHING -> "什么都不做"
@@ -273,6 +297,17 @@ object PlayerSettingsStore {
             "开", "ON", "true", "TRUE", "1" -> true
             "关", "OFF", "false", "FALSE", "0" -> false
             else -> defaultValue
+        }
+    }
+
+    // 换用新 key（subtitle_default_mode）后旧值（show_subtitle_default 的 关/开/自动）不再读取：
+    // 自动字幕作为全新默认档对所有用户生效，重新选择后写入新 key。
+    private fun parseSubtitleDefaultMode(value: String?): SubtitleDefaultMode {
+        return when (value?.trim()) {
+            "开启字幕", "ON", "true", "TRUE", "1" -> SubtitleDefaultMode.ON
+            "关闭字幕", "OFF", "false", "FALSE", "0" -> SubtitleDefaultMode.OFF
+            "自动字幕", "AUTO" -> SubtitleDefaultMode.AUTO
+            else -> SubtitleDefaultMode.AUTO
         }
     }
 }

@@ -367,7 +367,7 @@
     <string name="show_debug">显示视频调试信息</string>
     <string name="show_dm_switch">显示弹幕开关按钮</string>
     <string name="show_next_previous">显示上下集切换按钮</string>
-    <string name="show_subtitle_default">默认启用字幕</string>
+    <string name="show_subtitle_default">字幕设置</string>
     <string name="side_sheet_accessibility_pane_title">Side Sheet</string>
     <string name="side_sheet_behavior">com.google.android.material.sidesheet.SideSheetBehavior</string>
     <string name="sign_out">退出登录</string>

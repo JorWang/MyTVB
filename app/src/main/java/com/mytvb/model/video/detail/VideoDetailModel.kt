@@ -160,18 +160,28 @@ data class Subtitle(
 data class SubtitleItem(
     @SerializedName("id")
     val id: Long = 0,
-    
+
     @SerializedName("lan")
     val lan: String = "",
-    
+
     @SerializedName("lan_doc")
     val lanDoc: String = "",
-    
+
     @SerializedName("is_lock")
     val isLock: Boolean = false,
-    
+
     @SerializedName("subtitle_url")
-    val subtitleUrl: String = ""
+    val subtitleUrl: String = "",
+
+    // type: 0 = 人工上传/精校 CC 字幕；ai_status: 1 = AI 曝光(视频本身无字幕)，2 = AI 辅助(画面已有内嵌硬字幕)
+    @SerializedName("type")
+    val type: Int = 0,
+
+    @SerializedName("ai_status")
+    val aiStatus: Int = 0,
+
+    @SerializedName("ai_type")
+    val aiType: Int = 0
 )
 
 data class Staff(

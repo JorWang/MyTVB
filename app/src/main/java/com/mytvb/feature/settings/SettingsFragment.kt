@@ -97,7 +97,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         private const val KEY_AFTER_PLAY = "after_play"
         private const val KEY_PLAY_FINISH_EXIT_PLAYER = "play_finish_exit_player"
         private const val KEY_VIDEO_CODEC = "video_codec"
-        private const val KEY_SHOW_SUBTITLE_DEFAULT = "show_subtitle_default"
+        private const val KEY_SUBTITLE_DEFAULT_MODE = "subtitle_default_mode"
         private const val KEY_SUBTITLE_TEXT_SIZE = "subtitle_text_size"
         private const val KEY_SHOW_DEBUG = "show_debug"
         private const val KEY_SHOW_VIDEO_DETAIL = "show_video_detail"
@@ -242,7 +242,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             SettingModel(getString(R.string.after_play), "播推荐视频"),
             SettingModel(getString(R.string.play_finish_exit_player), "开"),
             SettingModel(getString(R.string.video_codec), "HEVC"),
-            SettingModel(getString(R.string.show_subtitle_default), "关"),
+            SettingModel(getString(R.string.show_subtitle_default), "自动字幕"),
             SettingModel(getString(R.string.subtitle_text_size), "45"),
             SettingModel(getString(R.string.show_debug), "关"),
             SettingModel(getString(R.string.show_bottom_progress_bar), "关"),
@@ -563,7 +563,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             3 -> showPlayerChoiceDialog(position, KEY_AFTER_PLAY, arrayOf("什么都不做", "播推荐视频", "播列表中的下一个", "播放合集中的下一个"))
             4 -> toggleSetting(playerSettings, 4, KEY_PLAY_FINISH_EXIT_PLAYER)
             5 -> showPlayerChoiceDialog(position, KEY_VIDEO_CODEC, arrayOf("AVC", "HEVC", "AV1"))
-            6 -> toggleSetting(playerSettings, 6, KEY_SHOW_SUBTITLE_DEFAULT)
+            6 -> showPlayerChoiceDialog(position, KEY_SUBTITLE_DEFAULT_MODE, arrayOf("关闭字幕", "开启字幕", "自动字幕"))
             7 -> showPlayerChoiceDialog(position, KEY_SUBTITLE_TEXT_SIZE, arrayOf("35", "40", "45", "50", "55", "60"))
             8 -> toggleSetting(playerSettings, 8, KEY_SHOW_DEBUG)
             9 -> toggleSetting(playerSettings, 9, KEY_SHOW_BOTTOM_PROGRESS_BAR)
@@ -1106,7 +1106,10 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         applySavedValue(playerSettings, 3, KEY_AFTER_PLAY)
         applySavedValue(playerSettings, 4, KEY_PLAY_FINISH_EXIT_PLAYER)
         applySavedValue(playerSettings, 5, KEY_VIDEO_CODEC)
-        applySavedValue(playerSettings, 6, KEY_SHOW_SUBTITLE_DEFAULT)
+        // 字幕设置项：读新 key（subtitle_default_mode），未选过时默认显示"自动字幕"
+        playerSettings.getOrNull(6)?.info = subtitleModeDisplayName(
+            appSettings.getCachedString(KEY_SUBTITLE_DEFAULT_MODE)
+        )
         applySavedValue(playerSettings, 7, KEY_SUBTITLE_TEXT_SIZE)
         applySavedValue(playerSettings, 8, KEY_SHOW_DEBUG)
         applySavedValue(playerSettings, 9, KEY_SHOW_BOTTOM_PROGRESS_BAR)
@@ -1137,6 +1140,14 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         appSettings.getCachedString(key)?.let { saved ->
             target.getOrNull(index)?.info = saved
         }
+    }
+
+    /** 字幕三态的显示文案归一化：未设置/旧值一律显示"自动字幕"（自动为全新默认档）。 */
+    private fun subtitleModeDisplayName(saved: String?): String = when (saved?.trim()) {
+        "开启字幕" -> "开启字幕"
+        "关闭字幕" -> "关闭字幕"
+        "自动字幕" -> "自动字幕"
+        else -> "自动字幕"
     }
 
     private fun Int.toThemeName(): String {

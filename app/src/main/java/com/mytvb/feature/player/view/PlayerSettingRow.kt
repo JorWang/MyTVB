@@ -8,7 +8,8 @@ internal sealed interface PlayerSettingRow {
 
     data class Item(
         val id: Int,
-        val title: String,
+        // CharSequence 而非 String：字幕轨道名的 "AI" 标记用 Spannable 拼接（小号+次要色），其余调用点传 String 均兼容。
+        val title: CharSequence,
         val value: String = "",
         val iconRes: Int? = null,
         val checked: Boolean = false,

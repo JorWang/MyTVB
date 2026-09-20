@@ -479,7 +479,15 @@ class VideoPlayerViewModel(
     val subtitles: StateFlow<List<SubtitleInfoModel>> get() = subtitleController.subtitles
     val selectedSubtitleIndex: StateFlow<Int> get() = subtitleController.selectedSubtitleIndex
     val currentSubtitleText: StateFlow<String?> get() = subtitleController.currentSubtitleText
-    fun selectSubtitle(index: Int) = subtitleController.selectSubtitle(index)
+    fun selectSubtitle(index: Int) {
+        // 用户手动选择轨道时记住语言，作为后续所有视频自动选择的最高优先级（选"关"不记录）。
+        if (index >= 0) {
+            subtitleController.subtitlesValue().getOrNull(index)?.lan
+                ?.takeIf { it.isNotBlank() }
+                ?.let(PlayerSettingsStore::saveSubtitlePreferredLan)
+        }
+        subtitleController.selectSubtitle(index)
+    }
 
     // ==================== 弹幕系统（转发到 DanmakuPlaybackController）====================
     val danmaku: StateFlow<List<DmModel>> get() = danmakuController.danmaku
@@ -918,7 +926,10 @@ class VideoPlayerViewModel(
             clearPreloadedPlaybackIfDifferent(currentPlayRequestIdentity(), cancelJob = false)
             hasReachedFirstFrame = false
             currentDashSession = null
-            subtitleController.resetForNewVideo(currentSettings.showSubtitleByDefault)
+            subtitleController.resetForNewVideo(
+                mode = currentSettings.subtitleDefaultMode,
+                preferredLan = currentSettings.subtitlePreferredLan
+            )
             danmakuController.clear()
             sponsorLoadJob?.cancel()
             sponsorBlockUseCase.reset()
@@ -3178,7 +3189,10 @@ class VideoPlayerViewModel(
             lan = lan,
             lanDoc = lanDoc,
             isLock = isLock,
-            subtitleUrl = subtitleUrl
+            subtitleUrl = subtitleUrl,
+            type = type,
+            aiStatus = aiStatus,
+            aiType = aiType
         )
     }
 

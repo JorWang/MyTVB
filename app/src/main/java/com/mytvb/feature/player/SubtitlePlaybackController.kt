@@ -3,6 +3,7 @@ package com.mytvb.feature.player
 import androidx.lifecycle.SavedStateHandle
 import com.mytvb.core.common.json.GsonHolder
 import com.mytvb.core.common.log.AppLog
+import com.mytvb.feature.player.settings.SubtitleDefaultMode
 import com.mytvb.model.subtitle.SubtitleData
 import com.mytvb.model.subtitle.SubtitleInfoModel
 import com.mytvb.model.subtitle.SubtitleItem
@@ -63,26 +64,39 @@ internal class SubtitlePlaybackController(
     private var subtitleOwnerBvid: String? = null
     private var subtitleOwnerCid: Long = 0L
     private var shouldAutoSelectSubtitle = true
+    private var subtitleDefaultMode = SubtitleDefaultMode.AUTO
+    private var preferredSubtitleLan: String = ""
+
+    // 当前选中的字幕是否来自自动策略（而非用户手动）。detail 阶段可能因 ai_status 缺失误判加载，
+    // playerInfo 轨道（信息更全）到达后据此纠偏关闭，用户手动选过则永不回收。
+    private var autoSelectedByPolicy = false
 
     /** loadVideoInfo / 换视频时的整体复位，恢复"按设置自动选字幕"。 */
-    fun resetForNewVideo(showSubtitleByDefault: Boolean) {
+    fun resetForNewVideo(mode: SubtitleDefaultMode, preferredLan: String = "") {
         subtitleLoadToken++
         currentSubtitleData = null
         subtitleOwnerBvid = null
         subtitleOwnerCid = 0L
-        shouldAutoSelectSubtitle = showSubtitleByDefault
+        subtitleDefaultMode = mode
+        shouldAutoSelectSubtitle = mode != SubtitleDefaultMode.OFF
+        preferredSubtitleLan = preferredLan
+        autoSelectedByPolicy = false
         _selectedSubtitleIndex.value = -1
         _currentSubtitleText.value = null
         currentSubtitleCueIndex = 0
     }
 
-    /** 同视频内切集/切清晰度等会话级复位，不影响自动选字幕开关。 */
+    /** 同视频内切集/切清晰度等会话级复位。上次是自动选择的则恢复自动资格，让新分P 重新按策略判定；用户手动选过（开或关）则尊重手动结果。 */
     fun resetSession() {
         subtitleLoadToken++
         currentSubtitleData = null
         subtitleOwnerBvid = null
         subtitleOwnerCid = 0L
         currentSubtitleCueIndex = 0
+        if (autoSelectedByPolicy) {
+            shouldAutoSelectSubtitle = subtitleDefaultMode != SubtitleDefaultMode.OFF
+            autoSelectedByPolicy = false
+        }
         _selectedSubtitleIndex.value = -1
         _currentSubtitleText.value = null
     }
@@ -102,6 +116,9 @@ internal class SubtitlePlaybackController(
     }
 
     fun selectSubtitle(index: Int) {
+        // 显式选择（含手动关闭）后本视频内不再自动选字幕，避免迟到的轨道更新覆盖用户操作。
+        shouldAutoSelectSubtitle = false
+        autoSelectedByPolicy = false
         val requestToken = ++subtitleLoadToken
         _selectedSubtitleIndex.value = index
         savedStateHandle[SAVED_SUBTITLE_INDEX] = index
@@ -248,18 +265,52 @@ internal class SubtitlePlaybackController(
         }
 
     fun maybeAutoSelectSubtitle() {
+        val subtitles = _subtitles.value
+        // 纠偏：此前按策略自动加载过，而最新轨道（playerInfo 的 ai_status 更全）判定视频已有
+        // 内嵌字幕不该挂外挂 → 回收关闭。用户手动选过（autoSelectedByPolicy=false）则永不回收。
+        if (autoSelectedByPolicy && subtitleDefaultMode == SubtitleDefaultMode.AUTO &&
+            subtitles.isNotEmpty() && !shouldAutoLoadExternalSubtitle(subtitles)
+        ) {
+            AppLog.i(
+                TAG,
+                "subtitle_trace auto_revert cid=${currentCid()} bvid=${currentBvid()} " +
+                    "tracks=${subtitleTracksSummary(subtitles)}"
+            )
+            selectSubtitle(-1)
+            // 纠偏不是终态：后续轨道更新/切集仍按策略正常自动判定。
+            shouldAutoSelectSubtitle = subtitleDefaultMode != SubtitleDefaultMode.OFF
+            return
+        }
         if (!shouldAutoSelectSubtitle) {
             AppLog.i(TAG, "subtitle_trace auto_select_skip reason=disabled cid=${currentCid()} bvid=${currentBvid()}")
             return
         }
-        val subtitles = _subtitles.value
         if (subtitles.isEmpty()) {
             AppLog.i(TAG, "subtitle_trace auto_select_skip reason=empty cid=${currentCid()} bvid=${currentBvid()}")
             return
         }
+        // 自动模式：视频已有内嵌字幕（全部为 AI 辅助备选轨）时不加载外挂字幕，避免双层重叠。
+        // 此处不消费 shouldAutoSelectSubtitle，等 playerInfo 轨道（带更全的 ai_status）到达后再判定。
+        if (subtitleDefaultMode == SubtitleDefaultMode.AUTO && !shouldAutoLoadExternalSubtitle(subtitles)) {
+            AppLog.i(
+                TAG,
+                "subtitle_trace auto_select_skip reason=embedded_hint mode=auto " +
+                    "cid=${currentCid()} bvid=${currentBvid()} " +
+                    "tracks=${subtitleTracksSummary(subtitles)}"
+            )
+            return
+        }
         shouldAutoSelectSubtitle = false
-        AppLog.i(TAG, "subtitle_trace auto_select cid=${currentCid()} bvid=${currentBvid()} size=${subtitles.size}")
-        selectSubtitle(0)
+        val targetIndex = selectPreferredSubtitleIndex(subtitles, preferredSubtitleLan)
+        val targetLan = subtitles.getOrNull(targetIndex)?.lan.orEmpty()
+        AppLog.i(
+            TAG,
+            "subtitle_trace auto_select cid=${currentCid()} bvid=${currentBvid()} " +
+                "size=${subtitles.size} index=$targetIndex lan=$targetLan " +
+                "preferredLan=$preferredSubtitleLan"
+        )
+        selectSubtitle(targetIndex)
+        autoSelectedByPolicy = true
     }
 
     fun updateSubtitleText(positionMs: Long) {

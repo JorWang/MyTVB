@@ -33,6 +33,49 @@ internal fun isLikelyAiSubtitleTrack(track: SubtitleInfoModel): Boolean =
         track.lanDoc.contains("机翻") ||
         track.lanDoc.contains("机器")
 
+internal fun isChineseSubtitleTrack(track: SubtitleInfoModel): Boolean =
+    track.lan.startsWith("zh", ignoreCase = true)
+
+internal fun isChineseAiSubtitleTrack(track: SubtitleInfoModel): Boolean =
+    isChineseSubtitleTrack(track) && isLikelyAiSubtitleTrack(track)
+
+/**
+ * 自动字幕轨道选择优先级：
+ * 1. 用户手动选择过的语言（lan 精确匹配，跨视频持久）；
+ * 2. 中文 AI（B 站自动生成的中文字幕，如 ai-zh）；
+ * 3. 中文（人工/CC，zh-CN、zh-Hans 等）；
+ * 4. 列表第一个。
+ */
+internal fun selectPreferredSubtitleIndex(
+    tracks: List<SubtitleInfoModel>,
+    preferredLan: String?
+): Int {
+    if (tracks.isEmpty()) return -1
+    if (!preferredLan.isNullOrBlank()) {
+        tracks.indexOfFirst { it.lan.equals(preferredLan, ignoreCase = true) }
+            .takeIf { it >= 0 }
+            ?.let { return it }
+    }
+    tracks.indexOfFirst(::isChineseAiSubtitleTrack).takeIf { it >= 0 }?.let { return it }
+    tracks.indexOfFirst(::isChineseSubtitleTrack).takeIf { it >= 0 }?.let { return it }
+    return 0
+}
+
+/**
+ * “自动”字幕模式下是否应加载外挂字幕（对齐 B 站官方 web/客户端与 blbl 的分级语义）：
+ * - 存在人工上传/精校 CC 字幕 (type == 0)：视频本身无内嵌字幕，加载；
+ * - 存在被标记为曝光的 AI 字幕 (ai_status == 1，说明视频本身无字幕、推荐展示)：加载；
+ * - 全部为 AI 辅助备选 (ai_status == 2，说明画面已内嵌硬字幕)：不加载，避免双层字幕重叠；
+ * - 其余情况不自动加载，用户可手动开启。
+ */
+internal fun shouldAutoLoadExternalSubtitle(tracks: List<SubtitleInfoModel>): Boolean {
+    if (tracks.isEmpty()) return false
+    if (tracks.any { it.type == 0 }) return true
+    if (tracks.any { it.aiStatus == 1 }) return true
+    if (tracks.all { it.aiStatus == 2 }) return false
+    return false
+}
+
 internal fun orderSubtitleTracksByPreference(tracks: List<SubtitleInfoModel>): List<SubtitleInfoModel> =
     tracks.sortedWith(
         compareByDescending<SubtitleInfoModel> { !isLikelyAiSubtitleTrack(it) }

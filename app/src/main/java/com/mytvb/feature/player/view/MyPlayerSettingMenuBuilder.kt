@@ -1,7 +1,14 @@
 package com.mytvb.feature.player.view
 
 import android.content.Context
+import android.graphics.Typeface
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
+import android.text.style.StyleSpan
 import com.mytvb.R
+import com.mytvb.feature.player.isLikelyAiSubtitleTrack
 import com.mytvb.feature.player.settings.AfterPlayMode
 import com.mytvb.feature.player.LiveLineInfo
 import com.mytvb.feature.player.LiveQualityInfo
@@ -161,12 +168,48 @@ internal class MyPlayerSettingMenuBuilder(
         rows += state.subtitles.mapIndexed { index, subtitle ->
             PlayerSettingRow.Item(
                 id = index,
-                title = subtitle.lanDoc,
+                title = subtitleTrackTitle(subtitle),
                 checked = index == state.currentSubtitlePosition,
                 showArrow = false
             )
         }
         return rows
+    }
+
+    /**
+     * 字幕轨道显示名。AI 字幕（对齐 B 站官方）在轨道名后追加 "AI" 标记：
+     * 小号、常规字重、次要色，与官方的行内徽标风格接近；人工/CC 字幕不加。
+     */
+    private fun subtitleTrackTitle(subtitle: SubtitleInfoModel): CharSequence {
+        val name = subtitle.lanDoc.ifBlank { subtitle.lan }.ifBlank { "未知" }
+        if (!isLikelyAiSubtitleTrack(subtitle)) return name
+        val spannable = SpannableStringBuilder(name)
+        val markStart = spannable.length
+        spannable.append(" AI")
+        spannable.setSpan(
+            RelativeSizeSpan(0.72f), markStart, spannable.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        spannable.setSpan(
+            StyleSpan(Typeface.NORMAL), markStart, spannable.length,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        resolveTextColorSecondary()?.let { color ->
+            spannable.setSpan(
+                ForegroundColorSpan(color), markStart, spannable.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
+        return spannable
+    }
+
+    private fun resolveTextColorSecondary(): Int? {
+        val typedArray = context.obtainStyledAttributes(intArrayOf(android.R.attr.textColorSecondary))
+        return try {
+            typedArray.getColorStateList(0)?.defaultColor
+        } finally {
+            typedArray.recycle()
+        }
     }
 
     fun buildVideoCodecMenu(state: PanelState): List<PlayerSettingRow> {
@@ -378,7 +421,10 @@ internal class MyPlayerSettingMenuBuilder(
         return when {
             subtitles.isEmpty() -> "不可用"
             currentSubtitlePosition !in subtitles.indices -> context.getString(R.string.off)
-            else -> subtitles.getOrNull(currentSubtitlePosition)?.lanDoc ?: "不可用"
+            else -> {
+                val track = subtitles.getOrNull(currentSubtitlePosition) ?: return "不可用"
+                if (isLikelyAiSubtitleTrack(track)) "${track.lanDoc} AI" else track.lanDoc
+            }
         }
     }
 

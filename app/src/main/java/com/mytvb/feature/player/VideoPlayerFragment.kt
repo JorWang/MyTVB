@@ -123,6 +123,16 @@ class VideoPlayerFragment : Fragment() {
 
     private var player: ExoPlayer? = null
     private val uiCoordinator = PlaybackUiCoordinator()
+
+    // coordinator 状态（面板开关、chrome 超时等）变化后即时重算字幕让位高度；
+    // listener 与 Fragment 同生命周期，onDestroyView 移除，回调内判空防 view 销毁后崩溃。
+    private val coordinatorStateListener = object : PlaybackUiCoordinator.OnStateChangedListener {
+        override fun onStateChanged(coordinator: PlaybackUiCoordinator) {
+            if (_binding != null) {
+                renderControllerChrome()
+            }
+        }
+    }
     private val overlayCoordinator = PlayerOverlayCoordinator()
     private var backgroundListener: AppBackgroundMonitor.BackgroundStateListener? = null
 
@@ -420,6 +430,7 @@ class VideoPlayerFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         initViews(view)
         playerSettings = PlayerSettingsStore.load(requireContext())
+        uiCoordinator.addListener(coordinatorStateListener)
         consumeLaunchContext()
         setupOverlayController()
         setupPlayer()
@@ -1336,11 +1347,15 @@ class VideoPlayerFragment : Fragment() {
     private fun renderControllerChrome(visibility: Int = latestControllerVisibility) {
         latestControllerVisibility = visibility
         syncChromeStateToCoordinator(visibility)
-        val subtitleBottomMarginRes = when (uiCoordinator.bottomOccupant) {
-            PlaybackUiCoordinator.BottomOccupant.FullChrome -> R.dimen.px300
-            PlaybackUiCoordinator.BottomOccupant.SlimTimeline -> R.dimen.px80
-            PlaybackUiCoordinator.BottomOccupant.BottomPanel -> R.dimen.px300
-            PlaybackUiCoordinator.BottomOccupant.None -> R.dimen.px60
+        // 字幕让位高度以实际可见的 UI 为准，不依赖 coordinator 的名义占用：
+        // 面板关闭后名义状态可能仍是 FullChrome（如 ProgressOnly 分支），而控制栏早已收起，
+        // 旧逻辑会让字幕一直停在高位（px300）。
+        val subtitleBottomMarginRes = when {
+            uiCoordinator.bottomOccupant == PlaybackUiCoordinator.BottomOccupant.BottomPanel ||
+                visibility == View.VISIBLE -> R.dimen.px300
+
+            ::playerSettings.isInitialized && playerSettings.showBottomProgressBar -> R.dimen.px80
+            else -> R.dimen.px60
         }
         (textSubtitle.layoutParams as? FrameLayout.LayoutParams)?.let { params ->
             val targetMargin = resources.getDimensionPixelSize(subtitleBottomMarginRes)
@@ -1569,7 +1584,21 @@ class VideoPlayerFragment : Fragment() {
         syncPlaybackEnvironment()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 系统设置（字幕大小/底部进度条等）可能在播放器存活期间被修改，返回时重新加载并应用
+        if (_binding != null && ::playerSettings.isInitialized) {
+            playerSettings = PlayerSettingsStore.load(requireContext())
+            textSubtitle.setTextSize(
+                TypedValue.COMPLEX_UNIT_PX,
+                playerSettings.subtitleTextSizePx.toFloat()
+            )
+            renderControllerChrome()
+        }
+    }
+
     override fun onDestroyView() {
+        uiCoordinator.removeListener(coordinatorStateListener)
         playerView.removeCallbacks(resumePlaybackRunnable)
         stopProgressUpdates()
         resumeHintController.release()

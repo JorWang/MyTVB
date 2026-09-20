@@ -243,6 +243,15 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
 
     private var player: ExoPlayer? = null
     private val uiCoordinator = PlaybackUiCoordinator()
+
+    // coordinator 状态（面板开关、chrome 超时等）变化后即时重算字幕让位高度
+    private val coordinatorStateListener = object : PlaybackUiCoordinator.OnStateChangedListener {
+        override fun onStateChanged(coordinator: PlaybackUiCoordinator) {
+            if (::textSubtitle.isInitialized && ::playerSettings.isInitialized) {
+                renderControllerChrome()
+            }
+        }
+    }
     private val overlayCoordinator = PlayerOverlayCoordinator()
 
     private lateinit var playerView: MyPlayerView
@@ -633,6 +642,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
             initViews()
             val settingsStartMs = SystemClock.elapsedRealtime()
             playerSettings = PlayerSettingsStore.load(this)
+            uiCoordinator.addListener(coordinatorStateListener)
             AppLog.i(TAG, "PLAYER_STARTUP PlayerSettingsStore.load elapsed=${SystemClock.elapsedRealtime() - settingsStartMs}ms")
             setupAdapters()
             setupOverlayController()
@@ -1538,6 +1548,16 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
 
     override fun onResume() {
         super.onResume()
+        // 系统设置（字幕大小/底部进度条等）可能在播放器后台期间被修改，
+        // 任何 onResume 都先重载并应用，再走原有的 surface 自愈逻辑。
+        playerSettings = PlayerSettingsStore.load(this)
+        if (::textSubtitle.isInitialized) {
+            textSubtitle.setTextSize(
+                TypedValue.COMPLEX_UNIT_PX,
+                playerSettings.subtitleTextSizePx.toFloat()
+            )
+            renderControllerChrome()
+        }
         // onStart 一定会先于 onResume 执行，且 onStart 里已做 surface 恢复，
         // 这里跳过紧随 onStart 的那次 onResume，避免重复 seekTo。
         if (resumedFromStart) {
@@ -1579,6 +1599,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
 
     override fun onDestroy() {
         uninstallMainThreadJankMonitor()
+        uiCoordinator.removeListener(coordinatorStateListener)
         playerView.removeCallbacks(resumePlaybackRunnable)
         stopProgressUpdates()
         stopTeenModeTicker()
@@ -1781,11 +1802,15 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
     private fun renderControllerChrome(visibility: Int = latestControllerVisibility) {
         latestControllerVisibility = visibility
         syncChromeStateToCoordinator(visibility)
-        val subtitleBottomMarginRes = when (uiCoordinator.bottomOccupant) {
-            PlaybackUiCoordinator.BottomOccupant.FullChrome -> R.dimen.px300
-            PlaybackUiCoordinator.BottomOccupant.SlimTimeline -> R.dimen.px80
-            PlaybackUiCoordinator.BottomOccupant.BottomPanel -> R.dimen.px300
-            PlaybackUiCoordinator.BottomOccupant.None -> R.dimen.px60
+        // 字幕让位高度以实际可见的 UI 为准，不依赖 coordinator 的名义占用：
+        // 面板关闭后名义状态可能仍是 FullChrome（如 ProgressOnly 分支），而控制栏早已收起，
+        // 旧逻辑会让字幕一直停在高位（px300）。
+        val subtitleBottomMarginRes = when {
+            uiCoordinator.bottomOccupant == PlaybackUiCoordinator.BottomOccupant.BottomPanel ||
+                visibility == View.VISIBLE -> R.dimen.px300
+
+            playerSettings.showBottomProgressBar -> R.dimen.px80
+            else -> R.dimen.px60
         }
         (textSubtitle.layoutParams as? FrameLayout.LayoutParams)?.let { params ->
             val targetMargin = resources.getDimensionPixelSize(subtitleBottomMarginRes)

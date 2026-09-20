@@ -6,6 +6,7 @@ import android.net.NetworkCapabilities
 import android.os.Handler
 import android.os.Looper
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -17,6 +18,7 @@ import androidx.media3.exoplayer.audio.DefaultAudioTrackBufferSizeProvider
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.core.common.media.VideoCodecSupport
+import com.mytvb.feature.player.settings.AudioBalanceSettings
 import com.mytvb.feature.player.settings.PlayerSettingsStore
 
 @UnstableApi
@@ -214,7 +216,6 @@ object PlayerInstancePool {
     fun releaseNow(reason: String) {
         cancelPendingRelease()
         isAttached = false
-        cachedPlayer?.let(PlayerAudioNormalizer::release)
         cachedPlayer?.release()
         cachedPlayer = null
         // player 销毁，挂载状态归零。
@@ -227,7 +228,6 @@ object PlayerInstancePool {
         val releaseRunnable = Runnable {
             synchronized(this) {
                 if (isAttached) return@synchronized
-                cachedPlayer?.let(PlayerAudioNormalizer::release)
                 cachedPlayer?.release()
                 cachedPlayer = null
                 // player 销毁，挂载状态归零。
@@ -246,6 +246,9 @@ object PlayerInstancePool {
     }
 
     private fun buildPlayer(context: Context): ExoPlayer {
+        // 音量均衡档位在构建 sink 前同步到全局 store：AudioProcessor 创建后每次取块
+        // 都读全局档位，设置页切换即时生效，无需重建播放器。
+        AudioBalanceSettings.level = PlayerSettingsStore.load(context).audioBalance
         val isFastNetwork = isOnFastNetwork(context)
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
@@ -265,15 +268,11 @@ object PlayerInstancePool {
             .setTrackSelector(DefaultTrackSelector(context, SeamlessQualityTrackSelectionFactory()))
             .build()
             .also(PlayerPlaybackPolicy::apply)
-            .also {
-                // 音量均衡默认关闭：DynamicsProcessing/LoudnessEnhancer 在部分 TV 设备上会引入失真（电音）。
-                if (PlayerSettingsStore.load(context).audioNormalize) {
-                    PlayerAudioNormalizer.attach(it)
-                }
-            }
     }
 
     fun createRenderersFactory(context: Context): DefaultRenderersFactory {
+        // 每个 player 一枚音量均衡处理器：档位读全局 store，关档 passthrough（仅一次 buffer 拷贝）。
+        val volumeBalanceProcessor = VolumeBalanceAudioProcessor()
         return object : DefaultRenderersFactory(context.applicationContext) {
             init {
                 // 硬解优先链路：流选择层（VideoCodecSupport.orderCandidates）已保证尽量选有硬解的编码，
@@ -301,6 +300,8 @@ object PlayerInstancePool {
                 return DefaultAudioSink.Builder(context)
                     .setEnableFloatOutput(enableFloatOutput)
                     .setEnableAudioOutputPlaybackParameters(enableAudioTrackPlaybackParams)
+                    // 1.9.3 的 setAudioProcessors 是普通数组参数（非 vararg），需显式包装。
+                    .setAudioProcessors(arrayOf<AudioProcessor>(volumeBalanceProcessor))
                     .setAudioOutputProvider(
                         AudioTrackAudioOutputProvider.Builder(context)
                             .setAudioTrackBufferSizeProvider(

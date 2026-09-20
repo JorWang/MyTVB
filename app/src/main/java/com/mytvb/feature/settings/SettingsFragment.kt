@@ -43,6 +43,7 @@ import com.mytvb.core.ui.system.ScreenUtils
 import com.mytvb.feature.player.PlayerInstancePool
 import com.mytvb.feature.player.VideoPlayerViewModel
 import com.mytvb.feature.player.cache.PlayerMediaCache
+import com.mytvb.feature.player.settings.AudioBalanceSettings
 import com.mytvb.feature.player.sponsor.SponsorBlockRepository
 import com.mytvb.core.common.ext.normalizeDanmakuSmartFilterValue
 import com.mytvb.network.cookie.CookieManager
@@ -123,7 +124,9 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         private const val KEY_DOUYIN_MODE = "douyin_mode"
         private const val KEY_RESUME_PLAYBACK = "resume_playback"
         private const val KEY_SPONSOR_BLOCK_ENABLED = "sponsor_block_enabled"
-        private const val KEY_AUDIO_NORMALIZE = "audio_normalize"
+        private const val KEY_AUDIO_NORMALIZE_LEGACY = "audio_normalize"
+        private const val KEY_AUDIO_BALANCE = "audio_balance"
+        private val AUDIO_BALANCE_OPTIONS = arrayOf("关", "低", "中", "高")
         private const val KEY_SEAMLESS_QUALITY_SWITCH = "seamless_quality_switch"
         private const val COMMON_POSITION_RISK_CONTROL = 6
         private const val COMMON_POSITION_UI_TEXT_SIZE = 11
@@ -570,7 +573,16 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             10 -> toggleSetting(playerSettings, 10, KEY_SHOW_NEXT_PREVIOUS)
             11 -> toggleSetting(playerSettings, 11, KEY_RESUME_PLAYBACK)
             12 -> toggleSponsorBlock()
-            13 -> toggleSetting(playerSettings, 13, KEY_AUDIO_NORMALIZE)
+            13 -> showChoiceDialog(
+                playerSettings[13].title,
+                playerSettings[13].info,
+                AUDIO_BALANCE_OPTIONS
+            ) { value ->
+                updateSetting(playerSettings, 13, value)
+                appSettings.putStringAsync(KEY_AUDIO_BALANCE, value)
+                // 刷新全局档位：正在播放的 player 下一个音频块即生效，无需重建播放器。
+                AudioBalanceSettings.applySettingValue(value)
+            }
             14 -> toggleSetting(playerSettings, 14, KEY_SEAMLESS_QUALITY_SWITCH)
         }
     }
@@ -1116,7 +1128,11 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         applySavedValue(playerSettings, 10, KEY_SHOW_NEXT_PREVIOUS)
         applySavedValue(playerSettings, 11, KEY_RESUME_PLAYBACK)
         applySavedValue(playerSettings, 12, KEY_SPONSOR_BLOCK_ENABLED)
-        applySavedValue(playerSettings, 13, KEY_AUDIO_NORMALIZE)
+        // 音量均衡：新 key（关/低/中/高）优先显示；未设置过时旧布尔"开"显示为"中"。
+        playerSettings.getOrNull(13)?.info = audioBalanceDisplayName(
+            appSettings.getCachedString(KEY_AUDIO_BALANCE),
+            appSettings.getCachedString(KEY_AUDIO_NORMALIZE_LEGACY)
+        )
         applySavedValue(playerSettings, 14, KEY_SEAMLESS_QUALITY_SWITCH)
 
         applySavedValue(dmSettings, 0, KEY_DM_SWITCH)
@@ -1140,6 +1156,12 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         appSettings.getCachedString(key)?.let { saved ->
             target.getOrNull(index)?.info = saved
         }
+    }
+
+    /** 音量均衡显示值：新 key 有值直接用；未设置时旧布尔开关"开"归一为"中"，其余显示"关"。 */
+    private fun audioBalanceDisplayName(value: String?, legacyValue: String?): String {
+        if (!value.isNullOrBlank()) return value
+        return if (legacyValue?.trim() == "开") "中" else "关"
     }
 
     /** 字幕三态的显示文案归一化：未设置/旧值一律显示"自动字幕"（自动为全新默认档）。 */

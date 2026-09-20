@@ -19,6 +19,8 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import com.mytvb.feature.player.extractor.FlvHevcExtractor
+import com.mytvb.feature.player.settings.AudioBalanceSettings
+import com.mytvb.feature.player.settings.PlayerSettingsStore
 import androidx.media3.extractor.ExtractorsFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.flv.FlvExtractor
@@ -185,9 +187,8 @@ class LivePlayerFragment : Fragment() {
             .build()
             .also {
                 PlayerPlaybackPolicy.apply(it)
-                if (com.mytvb.feature.player.settings.PlayerSettingsStore.load(requireContext()).audioNormalize) {
-                    PlayerAudioNormalizer.attach(it)
-                }
+                // 音量均衡：PCM 处理器随 createRenderersFactory 挂在 sink 上，此处同步全局档位即可。
+                AudioBalanceSettings.level = PlayerSettingsStore.load(requireContext()).audioBalance
                 it.addListener(playerListener)
             }
         binding.playerView.setPlayer(player)
@@ -258,7 +259,6 @@ class LivePlayerFragment : Fragment() {
     private fun rebuildPlayer() {
         player?.removeListener(playerListener)
         binding.playerView.stopDanmaku()
-        PlayerAudioNormalizer.release(player)
         player?.release()
         player = null
         setupPlayer()
@@ -384,7 +384,6 @@ class LivePlayerFragment : Fragment() {
         player?.removeListener(playerListener)
         binding.playerView.stopDanmaku()
         binding.playerView.destroy()
-        PlayerAudioNormalizer.release(player)
         player?.release()
         activity?.let { ViewUtils.keepScreenOn(it, false) }
         player = null

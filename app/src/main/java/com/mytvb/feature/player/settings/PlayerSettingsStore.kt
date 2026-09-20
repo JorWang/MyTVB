@@ -41,9 +41,9 @@ data class PlayerSettings(
     val resumePlayback: Boolean = true,
     val sponsorBlockEnabled: Boolean = false,
     val sponsorBlockAutoSkip: Boolean = true,
-    // 音量均衡：挂载 DynamicsProcessing 限制器 + LoudnessEnhancer。默认关闭——
-    // 这些系统音效在大量电视盒子上驱动实现有 bug，会引入失真（电音）。
-    val audioNormalize: Boolean = false,
+    // 音量均衡：PCM 级自适应响度归一（VolumeBalanceAudioProcessor），关/低/中/高四档。
+    // 取代旧的系统音效方案（DynamicsProcessing/LoudnessEnhancer——部分 TV 设备驱动有 bug 会失真）。
+    val audioBalance: AudioBalanceLevel = AudioBalanceLevel.OFF,
     // 无缝切清晰度：满足条件时用多清晰度 DASH MPD 源替代单档源，切档不重建播放器。默认关闭。
     val seamlessQualitySwitch: Boolean = false
 )
@@ -80,7 +80,9 @@ object PlayerSettingsStore {
     private const val KEY_RESUME_PLAYBACK = "resume_playback"
     private const val KEY_SPONSOR_BLOCK_ENABLED = "sponsor_block_enabled"
     private const val KEY_SPONSOR_BLOCK_AUTO_SKIP = "sponsor_block_auto_skip"
-    private const val KEY_AUDIO_NORMALIZE = "audio_normalize"
+    // 旧布尔开关的 key：仅用于迁移回退读取（"开"→中档），不再写入。
+    private const val KEY_AUDIO_NORMALIZE_LEGACY = "audio_normalize"
+    private const val KEY_AUDIO_BALANCE = "audio_balance"
     private const val KEY_SEAMLESS_QUALITY_SWITCH = "seamless_quality_switch"
 
     fun load(context: Context): PlayerSettings {
@@ -124,7 +126,9 @@ object PlayerSettingsStore {
             append("|")
             append(readSetting(KEY_SPONSOR_BLOCK_AUTO_SKIP).orEmpty())
             append("|")
-            append(readSetting(KEY_AUDIO_NORMALIZE).orEmpty())
+            append(readSetting(KEY_AUDIO_NORMALIZE_LEGACY).orEmpty())
+            append("|")
+            append(readSetting(KEY_AUDIO_BALANCE).orEmpty())
             append("|")
             append(readSetting(KEY_SEAMLESS_QUALITY_SWITCH).orEmpty())
         }
@@ -209,9 +213,9 @@ object PlayerSettingsStore {
                 readSetting(KEY_SPONSOR_BLOCK_AUTO_SKIP),
                 defaultValue = true
             ),
-            audioNormalize = parseToggle(
-                readSetting(KEY_AUDIO_NORMALIZE),
-                defaultValue = false
+            audioBalance = parseAudioBalance(
+                readSetting(KEY_AUDIO_BALANCE),
+                readSetting(KEY_AUDIO_NORMALIZE_LEGACY)
             ),
             seamlessQualitySwitch = parseToggle(
                 readSetting(KEY_SEAMLESS_QUALITY_SWITCH),
@@ -298,6 +302,17 @@ object PlayerSettingsStore {
             "关", "OFF", "false", "FALSE", "0" -> false
             else -> defaultValue
         }
+    }
+
+    /**
+     * 音量均衡档位解析：新 key（关/低/中/高）优先；未设置过时回退旧布尔开关，
+     * 旧"开"映射到中档，其余（含从未设置）为关。
+     */
+    private fun parseAudioBalance(value: String?, legacyValue: String?): AudioBalanceLevel {
+        if (!value.isNullOrBlank()) {
+            return AudioBalanceLevel.fromSettingValue(value)
+        }
+        return if (legacyValue?.trim() == "开") AudioBalanceLevel.MEDIUM else AudioBalanceLevel.OFF
     }
 
     // 换用新 key（subtitle_default_mode）后旧值（show_subtitle_default 的 关/开/自动）不再读取：

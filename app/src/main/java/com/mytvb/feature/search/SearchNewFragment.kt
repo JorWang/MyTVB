@@ -302,8 +302,7 @@ class SearchNewFragment :
         binding.tabSearchResult.enableTouchNavigation(
             binding.viewPagerResult,
             tabFocusable = true,
-            onNavigateDown = { focusCurrentResultContent() },
-            onNavigateRight = ::focusOrderButton
+            onNavigateDown = { focusCurrentResultContent() }
         )
         PagePerfLogger.mark("Search", "result_setup_end", setupStartMs)
         return adapter
@@ -655,8 +654,7 @@ class SearchNewFragment :
         binding.tabSearchResult.enableTouchNavigation(
             binding.viewPagerResult,
             tabFocusable = true,
-            onNavigateDown = { focusCurrentResultContent() },
-            onNavigateRight = ::focusOrderButton
+            onNavigateDown = { focusCurrentResultContent() }
         )
         viewModel.searchPageStates.value.forEach { (type, state) ->
             adapter.submitState(type, state.items, state.loading, state.hasMore)

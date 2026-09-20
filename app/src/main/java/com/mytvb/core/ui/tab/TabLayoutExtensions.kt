@@ -61,14 +61,14 @@ fun TabLayout.enableTouchNavigation(
                             }
                             KeyEvent.KEYCODE_DPAD_LEFT -> {
                                 if (index == 0) {
-                                    onNavigateLeft?.invoke() == true
+                                    consumeEdgeNavigation { onNavigateLeft?.invoke() }
                                 } else {
                                     false
                                 }
                             }
                             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                                 if (index == tabStrip.childCount - 1) {
-                                    onNavigateRight?.invoke() == true
+                                    consumeEdgeNavigation { onNavigateRight?.invoke() }
                                 } else {
                                     false
                                 }
@@ -132,14 +132,14 @@ fun TabLayout.enableTouchNavigation(
                             }
                             KeyEvent.KEYCODE_DPAD_LEFT -> {
                                 if (index == 0) {
-                                    onNavigateLeft?.invoke() == true
+                                    consumeEdgeNavigation { onNavigateLeft?.invoke() }
                                 } else {
                                     false
                                 }
                             }
                             KeyEvent.KEYCODE_DPAD_RIGHT -> {
                                 if (index == tabStrip.childCount - 1) {
-                                    onNavigateRight?.invoke() == true
+                                    consumeEdgeNavigation { onNavigateRight?.invoke() }
                                 } else {
                                     false
                                 }
@@ -187,6 +187,16 @@ fun TabLayout.focusNearestTabTo(anchorView: View?): Boolean {
             focusSelectedTab() || candidates.firstOrNull()?.requestFocus() == true
         }
     )
+}
+
+/**
+ * 首/末 tab 的越界方向键一律消费：回调自行决定去向（如聚焦右侧排序按钮/左侧功能栏），
+ * 未接管则焦点停在原 tab。此前未消费会放行 FocusFinder 几何搜索，把焦点送到
+ * 下方列表卡片等不可预期的位置。
+ */
+private fun consumeEdgeNavigation(action: () -> Unit): Boolean {
+    action()
+    return true
 }
 
 private fun TabLayout.keepSelectedTabFocused(

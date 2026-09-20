@@ -87,6 +87,7 @@ class MeListFragment : BaseFragment<FragmentMeTabListBinding>(), MeTabPage, com.
     private var tvFocusController: TvListFocusController? = null
     private var currentOpenStartMs = 0L
     private var latestRequestStartMs = 0L
+    private var lastListLoadedAtMs = 0L
 
     /**
      * 性能打点用的请求起点（陈旧保护）：
@@ -310,6 +311,7 @@ class MeListFragment : BaseFragment<FragmentMeTabListBinding>(), MeTabPage, com.
 
     private fun loadData() {
         latestRequestStartMs = PagePerfLogger.now()
+        lastListLoadedAtMs = System.currentTimeMillis()
         if (type == TYPE_HISTORY && currentPage <= 1) {
             allowHistoryLoadMore = false
         }
@@ -769,6 +771,15 @@ class MeListFragment : BaseFragment<FragmentMeTabListBinding>(), MeTabPage, com.
         }
         when (type) {
             TYPE_HISTORY, TYPE_LATER -> {
+                // 内容仍新鲜（未过 TTL）：保留滚动位置/焦点原样，不再回顶重拉
+                // （切 tab 保进度；重复点击 tab / 菜单键走 refresh() 仍是显式刷新回顶）
+                val listFresh = hasContentItems() &&
+                        System.currentTimeMillis() - lastListLoadedAtMs < CACHE_TTL_MS
+                if (listFresh) {
+                    PagePerfLogger.markNow(pageTag(), "tab_selected_keep_state")
+                    AppLog.d("MeDebug", "[$type] onTabSelected: keep state (fresh within TTL)")
+                    return
+                }
                 pendingHistoryScrollToTop = type == TYPE_HISTORY
                 pendingLaterScrollToTop = type == TYPE_LATER
                 tvFocusController?.clearAnchorForUserRefresh()

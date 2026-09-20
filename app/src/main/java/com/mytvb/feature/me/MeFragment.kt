@@ -70,7 +70,9 @@ class MeFragment : BaseFragment<FragmentMeBinding>(), MainTabFocusTarget {
             lifecycle
         )
         viewPager.adapter = adapter
-        viewPager.disableAdjacentPagePrefetch()
+        // 保留全部 3 个 tab 页（历史/收藏/稍后观看）：切 tab 不销毁 fragment，
+        // 滚动进度/焦点/已加载数据切回来原样保留（同首页，见 disableAdjacentPagePrefetch 注释）
+        viewPager.disableAdjacentPagePrefetch(retainAllPages = true)
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = adapter.getPageTitle(position)?.let(::getString).orEmpty()
         }.attach()

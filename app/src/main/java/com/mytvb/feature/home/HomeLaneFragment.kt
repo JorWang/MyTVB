@@ -446,6 +446,9 @@ class HomeLaneFragment : BaseListFragment<HomeLaneSection>(), HomeTabPage {
 
     private fun pageTag(): String = "HomeLane/$type"
 
+    override val shouldPrewarmInitialViewHolders: Boolean
+        get() = isCurrentHomePage()
+
     private fun isCurrentHomePage(): Boolean {
         return (parentFragment as? HomeFragment)?.isCurrentPage(homePageIndex()) != false
     }

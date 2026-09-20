@@ -45,6 +45,7 @@ import org.koin.android.ext.android.inject
 class FavoriteFragment : BaseFragment<FragmentFavoriteBinding>(), MeTabPage {
     companion object {
         private const val ARG_EMBEDDED = "embedded"
+        private const val FOLDERS_CACHE_TTL_MS = 10 * 60 * 1000L
 
         fun newInstance() = FavoriteFragment()
 
@@ -68,6 +69,7 @@ class FavoriteFragment : BaseFragment<FragmentFavoriteBinding>(), MeTabPage {
     private var coverHydrationJob: Job? = null
     private var folderLoadJob: Job? = null
     private var isLoadingFolders = false
+    private var foldersLoadedAtMs = 0L
     private var folderRequestSerial = 0
     private var activeFolderRequestId = 0
     private val appSettings: AppSettingsDataStore by inject()
@@ -200,6 +202,7 @@ class FavoriteFragment : BaseFragment<FragmentFavoriteBinding>(), MeTabPage {
         val requestId = ++folderRequestSerial
         activeFolderRequestId = requestId
         val requestStartMs = PagePerfLogger.now()
+        foldersLoadedAtMs = System.currentTimeMillis()
         folderLoadJob?.cancel()
         coverHydrationJob?.cancel()
         PagePerfLogger.markNow(
@@ -363,6 +366,12 @@ class FavoriteFragment : BaseFragment<FragmentFavoriteBinding>(), MeTabPage {
             return
         }
         com.mytvb.core.common.log.AppLog.d("MeDebug", "[favorite] onTabSelected: lastFocusedPos=$lastFocusedPosition, adapterCount=${adapter.itemCount}")
+        // 内容仍新鲜（未过 TTL）：保留滚动位置/焦点，不再回顶重拉
+        // （切 tab 保进度；重复点击 tab / 菜单键走 onTabReselected 仍是显式刷新回顶）
+        if (adapter.itemCount > 0 && System.currentTimeMillis() - foldersLoadedAtMs < FOLDERS_CACHE_TTL_MS) {
+            com.mytvb.core.common.log.AppLog.d("MeDebug", "[favorite] onTabSelected: keep state (fresh within TTL)")
+            return
+        }
         lastFocusedPosition = RecyclerView.NO_POSITION
         binding.recyclerViewFavorite.scrollToPosition(0)
         loadFavoriteFolders()

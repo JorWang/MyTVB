@@ -54,6 +54,13 @@ abstract class BaseListFragment<MODEL> : BaseFragment<FragmentBaseListBinding>()
     protected open val enableTvListFocusController: Boolean = false
     protected open val initialViewHolderPrewarmCount: Int = 0
     protected open val initialViewHolderPrewarmPlan: RecyclerViewPoolPrewarmer.Plan? = null
+
+    /**
+     * 非当前 tab 页（宿主 ViewPager2 首帧后批量创建的空壳页）跳过 ViewHolder 预热：
+     * 共享池已被当前页预热过、viewType 相同，切过去照样命中；避免多个空壳页同时
+     * 预热挤占主线程、拖慢当前 tab 首屏内容渲染。
+     */
+    protected open val shouldPrewarmInitialViewHolders: Boolean = true
     private var pendingRecyclerIdleAction: (() -> Unit)? = null
     private var pendingSwipeRefreshInstallRoot: View? = null
     private var pendingSwipeRefreshInstallListener: ViewTreeObserver.OnPreDrawListener? = null
@@ -96,7 +103,7 @@ abstract class BaseListFragment<MODEL> : BaseFragment<FragmentBaseListBinding>()
             ?: initialViewHolderPrewarmCount
                 .takeIf { it > 0 }
                 ?.let { RecyclerViewPoolPrewarmer.Plan(count = it, budgetMs = 180L) }
-        if (rvForPrewarm != null && adapterForPrewarm != null && prewarmPlan != null) {
+        if (rvForPrewarm != null && adapterForPrewarm != null && prewarmPlan != null && shouldPrewarmInitialViewHolders) {
             RecyclerViewPoolPrewarmer.prewarm(
                 recyclerView = rvForPrewarm,
                 adapter = adapterForPrewarm,

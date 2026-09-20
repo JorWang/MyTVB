@@ -21,6 +21,7 @@ import com.mytvb.ui.fragment.main.MainTabFocusTarget
 import com.mytvb.core.ui.tab.enableTouchNavigation
 import com.mytvb.core.ui.tab.focusNearestTabTo
 import com.mytvb.core.ui.tab.disableAdjacentPagePrefetch
+import com.mytvb.core.ui.tab.retainAllPagesAfterFirstLayout
 import com.mytvb.core.ui.focus.SpatialFocusNavigator
 import com.mytvb.core.common.ext.getHomeDefaultStartPageIndex
 import com.mytvb.core.common.log.AppLog
@@ -61,7 +62,11 @@ class HomeFragment : Fragment(), MainTabFocusTarget {
         super.onViewCreated(view, savedInstanceState)
         adapter = HomeFragmentStateAdapter(childFragmentManager, viewLifecycleOwner.lifecycle)
         binding.viewPager.adapter = adapter
+        // 冷启动先按需创建（只建当前页，不拖慢首帧），首帧后再保留全部 4 个 tab 页：
+        // 此后切 tab 不销毁 fragment，滚动进度/焦点/已加载数据切回来原样保留
+        // （配合各 tab 页"非当前页不加载"的懒加载，空壳成本极低）
         binding.viewPager.disableAdjacentPagePrefetch()
+        binding.viewPager.retainAllPagesAfterFirstLayout()
         tabMediator = TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
             tab.text = adapter.getPageTitle(position)
         }.also { it.attach() }

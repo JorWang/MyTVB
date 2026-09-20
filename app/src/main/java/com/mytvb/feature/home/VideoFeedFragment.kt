@@ -52,6 +52,8 @@ abstract class VideoFeedFragment : BaseListFragment<VideoModel>(), HomeTabPage, 
     override val autoLoad: Boolean = false
     override val initialViewHolderPrewarmPlan: RecyclerViewPoolPrewarmer.Plan = RecyclerViewPoolPrewarmer.Plan.VideoFeed
     override val deferSwipeRefreshUntilFirstDraw: Boolean = true
+    override val shouldPrewarmInitialViewHolders: Boolean
+        get() = isCurrentHomePage()
     override fun createAdapter(): VideoAdapter {
         return VideoAdapter(
             onItemClick = ::onVideoClick,
@@ -482,7 +484,7 @@ abstract class VideoFeedFragment : BaseListFragment<VideoModel>(), HomeTabPage, 
         return (parentFragment as? HomeFragment)?.focusCurrentTab() == true
     }
 
-    private fun isCurrentHomePage(): Boolean {
+    protected fun isCurrentHomePage(): Boolean {
         return (parentFragment as? HomeFragment)?.isCurrentPage(secondaryTabPosition) != false
     }
 

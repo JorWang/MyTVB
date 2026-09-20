@@ -55,7 +55,6 @@ class DynamicFragment : BaseFragment<FragmentDynamicBinding>(), MainTabFocusTarg
 
     companion object {
         private const val TAG = "DynamicFrag"
-        private const val CACHE_TTL_MS = 5 * 60 * 1000L
 
         fun newInstance(): DynamicFragment = DynamicFragment()
     }
@@ -188,7 +187,6 @@ class DynamicFragment : BaseFragment<FragmentDynamicBinding>(), MainTabFocusTarg
         preferredContentFocusTarget = ContentFocusTarget.LEFT_UP_LIST
         if (wasSelected) {
             swipeRefreshLayout?.isRefreshing = true
-            lastRefreshTime = System.currentTimeMillis()
         }
         viewModel.selectUp(currentUpId.toString(), pageSize, forceRefresh = wasSelected)
     }
@@ -248,7 +246,6 @@ class DynamicFragment : BaseFragment<FragmentDynamicBinding>(), MainTabFocusTarg
         }
         PagePerfLogger.markNow("Dynamic", "request_start", "upId=$currentUpId")
         pendingScrollToTop = true
-        lastRefreshTime = System.currentTimeMillis()
         if (!sessionGateway.isLoggedIn()) {
             currentUpId = 0L
             viewModel.loadFollowingList()
@@ -265,7 +262,6 @@ class DynamicFragment : BaseFragment<FragmentDynamicBinding>(), MainTabFocusTarg
         latestVideoRequestStartMs = currentOpenStartMs
         PagePerfLogger.markNow("Dynamic", "refresh_start", "upId=$currentUpId")
         pendingScrollToTop = true
-        lastRefreshTime = System.currentTimeMillis()
         if (!sessionGateway.isLoggedIn()) {
             currentUpId = 0L
             loadData()
@@ -427,15 +423,18 @@ class DynamicFragment : BaseFragment<FragmentDynamicBinding>(), MainTabFocusTarg
                     }
                     when (event) {
                         is MainNavigationViewModel.Event.MainTabSelected ->
-                            if (event.index == 2 && shouldRefresh()) {
+                            // 从其他左侧功能切回动态：已有内容一律保持原样（选中 UP、
+                            // 滚动进度、焦点不重置）；刷新走重复点击 tab / 菜单键等
+                            // 显式入口。仅空列表（首次进入/加载失败）才自动加载。
+                            if (event.index == 2 && ::videoAdapter.isInitialized && videoAdapter.itemCount > 0) {
+                                currentOpenStartMs = PagePerfLogger.now()
+                                PagePerfLogger.markNow("Dynamic", "tab_selected_cached", "items=${videoAdapter.contentCount()}")
+                                logDynamicFirstDraw(viewModel.loadedPage.value, videoAdapter.contentCount())
+                            } else if (event.index == 2) {
                                 currentOpenStartMs = PagePerfLogger.now()
                                 PagePerfLogger.markNow("Dynamic", "tab_selected_refresh")
                                 currentUpId = 0L
                                 loadData()
-                            } else if (event.index == 2 && ::videoAdapter.isInitialized && videoAdapter.itemCount > 0) {
-                                currentOpenStartMs = PagePerfLogger.now()
-                                PagePerfLogger.markNow("Dynamic", "tab_selected_cached", "items=${videoAdapter.contentCount()}")
-                                logDynamicFirstDraw(viewModel.loadedPage.value, videoAdapter.contentCount())
                             }
 
                         is MainNavigationViewModel.Event.MainTabReselected ->
@@ -707,13 +706,6 @@ class DynamicFragment : BaseFragment<FragmentDynamicBinding>(), MainTabFocusTarg
 
     override fun focusEntryFromMainTab(anchorView: View?, preferSpatialEntry: Boolean): Boolean {
         return focusPrimaryContent(anchorView, preferSpatialEntry)
-    }
-
-    private var lastRefreshTime = 0L
-
-    private fun shouldRefresh(): Boolean {
-        return videoAdapter.itemCount == 0 || upAdapter.itemCount == 0 ||
-                System.currentTimeMillis() - lastRefreshTime >= CACHE_TTL_MS
     }
 
     private fun View.isDescendantOf(ancestor: View): Boolean {

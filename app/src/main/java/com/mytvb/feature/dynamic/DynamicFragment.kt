@@ -132,6 +132,10 @@ class DynamicFragment : BaseFragment<FragmentDynamicBinding>(), MainTabFocusTarg
             onItemFocused = { position ->
                 lastFocusedVideoPosition = position
                 preferredContentFocusTarget = ContentFocusTarget.RIGHT_VIDEO_LIST
+                // 焦点导航下 RV 常常不滚动（焦点行下方还有缓冲行，dy=0），
+                // onScrolled 里的 checkLoadMore 收不到事件，必须在焦点落定时补查，
+                // 否则触底加载要等焦点顶死最后一行才触发（用户体感"加载慢"）
+                checkLoadMore()
             },
             onLeftEdge = { focusNearestUpItem() },
             onItemFocusedWithView = { view, position ->
@@ -366,6 +370,8 @@ class DynamicFragment : BaseFragment<FragmentDynamicBinding>(), MainTabFocusTarg
                                 },
                                 onAppendRest = {
                                     videoFocusController?.onDataChanged(TvDataChangeReason.APPEND)
+                                    // 首屏数据只有一页 11~14 条（不足一屏），落地即预取下一页
+                                    checkLoadMore()
                                 }
                             )
                         } else {
@@ -378,6 +384,9 @@ class DynamicFragment : BaseFragment<FragmentDynamicBinding>(), MainTabFocusTarg
                                 "items=${videoAdapter.contentCount()} page=$page"
                             )
                             videoFocusController?.onDataChanged(TvDataChangeReason.APPEND)
+                            // 落地即续拉：焦点仍贴着列表尾部时立刻预取下一页，
+                            // 消除"按到底→等网络→再按一次"的空窗
+                            checkLoadMore()
                         }
                     }
                 }

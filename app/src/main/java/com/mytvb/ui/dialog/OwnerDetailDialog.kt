@@ -108,22 +108,9 @@ class OwnerDetailDialog(
         }
         binding.recyclerView.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
-                if (dy <= 0) return
-                val layoutManager = recyclerView.layoutManager ?: return
-                val lastVisibleItem = (layoutManager as? androidx.recyclerview.widget.GridLayoutManager)
-                    ?.findLastVisibleItemPosition() ?: return
-                val totalItems = recyclerView.adapter?.itemCount ?: return
-                // 提前约一屏触发：3 列网格一屏约 6 卡，提前消费已在飞的下一页预取。
-                // 必须 post 到下一帧：预取命中时数据几乎同步返回，若在 onScrolled 里直接
-                // addData 会撞 RecyclerView 的 assertNotInLayoutOrScroll 检查。
-                if (!isLoading && hasMore && lastVisibleItem >= totalItems - 6) {
-                    recyclerView.post {
-                        if (!isLoading && hasMore) {
-                            currentPage++
-                            loadOwnerVideos()
-                        }
-                    }
-                }
+                // 不限制 dy>0：定位当前视频的 jump 滚动 dy=0，若拦掉会让列表停在
+                // 尾部却不翻页，footer“正在加载..”没有任何请求在飞、永远空转。
+                maybeTriggerLoadMore()
             }
         })
         installTvListFocusController()
@@ -291,6 +278,26 @@ class OwnerDetailDialog(
         }
     }
 
+    /**
+     * 提前约一屏触发下一页：3 列网格一屏约 6 卡，提前消费已在飞的下一页预取。
+     * 必须 post 到下一帧：预取命中时数据几乎同步返回，若在 onScrolled 里直接
+     * addData 会撞 RecyclerView 的 assertNotInLayoutOrScroll 检查。
+     */
+    private fun maybeTriggerLoadMore() {
+        val layoutManager = binding.recyclerView.layoutManager as? androidx.recyclerview.widget.GridLayoutManager
+            ?: return
+        val totalItems = binding.recyclerView.adapter?.itemCount ?: return
+        val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+        if (!isLoading && hasMore && lastVisibleItem >= totalItems - 6) {
+            binding.recyclerView.post {
+                if (!isLoading && hasMore) {
+                    currentPage++
+                    loadOwnerVideos()
+                }
+            }
+        }
+    }
+
     private fun scrollToCurrentVideo(videos: List<VideoModel>): Boolean {
         val targetIndex = videos.indexOfFirst { video ->
             (currentAid > 0L && video.aid == currentAid) ||
@@ -321,6 +328,9 @@ class OwnerDetailDialog(
                     layoutManager.scrollToPositionWithOffset(
                         targetIndex, centerOffset.coerceAtLeast(0)
                     )
+                    // jump 滚动不保证回调 onScrolled，停在尾部时显式补一次触底检查，
+                    // 否则 footer 转圈会一直空转（见 maybeTriggerLoadMore 注释）。
+                    binding.recyclerView.post { maybeTriggerLoadMore() }
                 }
             }
         }

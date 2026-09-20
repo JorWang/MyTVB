@@ -156,7 +156,10 @@ class HistoryVideoAdapter(
                     if (previous != RecyclerView.NO_POSITION && previous != position) {
                         notifyItemChangedWhenIdle(views.root, previous)
                     }
-                    applyFocusState(views.root, true)
+                    // 不在 click 里手动 applyFocusState(true)：触摸设备卡片无真焦点，
+                    // selected 设上后没有失焦回调可清，进播放返回后灰底永久残留
+                    // （22eb28fb 去掉 focusableInTouchMode 后暴露）。遥控 OK 点击时
+                    // 焦点本就在卡片上，OnFocusChangeListener 已做同样的高亮。
                     onItemFocusedWithView?.invoke(views.root, position)
                 }
                 currentItem?.let(onItemClick)

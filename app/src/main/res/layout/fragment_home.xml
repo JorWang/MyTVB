@@ -30,7 +30,7 @@
         app:tabIndicatorHeight="@dimen/px10"
         app:tabMaxWidth="@dimen/px200"
         app:tabMode="scrollable"
-        app:tabRippleColor="?attr/colorControlHighlight"
+        app:tabRippleColor="@android:color/transparent"
         app:tabSelectedTextColor="?android:attr/textColorPrimary"
         app:tabTextAppearance="@style/TopPageTabText"/>
     <androidx.viewpager2.widget.ViewPager2

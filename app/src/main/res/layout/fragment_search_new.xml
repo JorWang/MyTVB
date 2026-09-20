@@ -147,7 +147,7 @@
             app:tabIndicatorFullWidth="false"
             app:tabIndicatorHeight="@dimen/px10"
             app:tabMode="scrollable"
-            app:tabRippleColor="?attr/colorControlHighlight"
+            app:tabRippleColor="@android:color/transparent"
             app:tabSelectedTextColor="?android:attr/textColorPrimary"
             app:tabTextAppearance="@style/SearchPageTabText"/>
         <androidx.appcompat.widget.LinearLayoutCompat

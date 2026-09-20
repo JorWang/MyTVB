@@ -9,10 +9,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
+import com.mytvb.R
 
 private const val TAB_SWITCH_BASE_DURATION_MS = 60
 private const val TAB_SWITCH_STEP_DURATION_MS = 20
@@ -36,6 +38,8 @@ fun TabLayout.enableTouchNavigation(
             val tabView = tabStrip.getChildAt(index)
             tabView.isClickable = true
             tabView.isFocusable = tabFocusable
+            suppressLongPressTooltip(tabView)
+            applyTabBackground(tabView)
             bindTabTouchTextColor(tabView)
             if (tabFocusable) {
                 bindTabFocusTextColor(tabView)
@@ -114,6 +118,8 @@ fun TabLayout.enableTouchNavigation(
             val tabView = tabStrip.getChildAt(index)
             tabView.isClickable = true
             tabView.isFocusable = tabFocusable
+            suppressLongPressTooltip(tabView)
+            applyTabBackground(tabView)
             bindTabTouchTextColor(tabView)
             if (tabFocusable) {
                 bindTabFocusTextColor(tabView)
@@ -205,6 +211,24 @@ fun TabLayout.focusNearestTabTo(anchorView: View?): Boolean {
 private fun consumeEdgeNavigation(action: () -> Unit): Boolean {
     action()
     return true
+}
+
+/**
+ * Android 9+ 长按 TabView 会弹系统 tooltip（白色气泡显示 tab 名），TV 上不需要。
+ * 消费长按事件（返回 true）阻止系统走内部的 tooltip 弹出路径。
+ */
+private fun suppressLongPressTooltip(tabView: View) {
+    tabView.setOnLongClickListener { true }
+}
+
+/**
+ * material 1.12 的 TabView 会把 XML tabBackground 的同一个 Drawable 实例在所有 tab 间共享，
+ * drawableStateChanged 互相覆盖状态，带 selector 的背景会串台（一个 tab 焦点 → 全部 tab 高亮）。
+ * 这里给每个 tabView 各加载一份独立实例，焦点/按压状态互不影响；tabBackground 须保持透明。
+ */
+private fun applyTabBackground(tabView: View) {
+    tabView.background =
+        ContextCompat.getDrawable(tabView.context, R.drawable.tab_item_round_background)
 }
 
 /**

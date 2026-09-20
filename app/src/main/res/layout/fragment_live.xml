@@ -21,7 +21,7 @@
         app:tabMode="scrollable"
         app:tabPaddingEnd="@dimen/px20"
         app:tabPaddingStart="@dimen/px20"
-        app:tabRippleColor="?attr/colorControlHighlight"
+        app:tabRippleColor="@android:color/transparent"
         app:tabSelectedTextColor="?android:attr/textColorPrimary"
         app:tabTextAppearance="@style/TopPageTabText"/>
 

@@ -649,7 +649,7 @@ class MeListFragment : BaseFragment<FragmentMeTabListBinding>(), MeTabPage, com.
         tvFocusController = TvListFocusController(
             recyclerView = binding.recyclerView,
             adapter = focusableAdapter,
-            strategy = GridTvFocusStrategy { 4 },
+            strategy = GridTvFocusStrategy.from(binding.recyclerView),
             canLoadMore = {
                 when (type) {
                     TYPE_HISTORY -> allowHistoryLoadMore && viewModel.hasMore.value

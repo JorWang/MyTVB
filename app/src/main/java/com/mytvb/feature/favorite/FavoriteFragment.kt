@@ -162,7 +162,7 @@ class FavoriteFragment : BaseFragment<FragmentFavoriteBinding>(), MeTabPage {
         tvFocusController = TvListFocusController(
             recyclerView = binding.recyclerViewFavorite,
             adapter = ListAdapterTvFocusBridge(adapter) { it.id.toString() },
-            strategy = GridTvFocusStrategy { 4 },
+            strategy = GridTvFocusStrategy.from(binding.recyclerViewFavorite),
             canLoadMore = { false },
             loadMore = {}
         )

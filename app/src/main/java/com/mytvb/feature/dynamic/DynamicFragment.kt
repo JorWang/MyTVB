@@ -761,7 +761,7 @@ class DynamicFragment : BaseFragment<FragmentDynamicBinding>(), MainTabFocusTarg
         videoFocusController = TvListFocusController(
             recyclerView = binding.recyclerViewRight,
             adapter = videoAdapter,
-            strategy = GridTvFocusStrategy { 3 },
+            strategy = GridTvFocusStrategy.from(binding.recyclerViewRight, fallback = 3),
             canLoadMore = { viewModel.hasMoreVideos.value },
             loadMore = {
                 if (!viewModel.loading.value && viewModel.hasMoreVideos.value) {

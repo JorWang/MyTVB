@@ -404,7 +404,7 @@ class FavoriteDetailFragment : BaseFragment<FragmentFavoriteDetailBinding>() {
         tvFocusController = TvListFocusController(
             recyclerView = binding.recyclerViewVideos,
             adapter = favoriteAdapter,
-            strategy = GridTvFocusStrategy { 4 },
+            strategy = GridTvFocusStrategy.from(binding.recyclerViewVideos),
             canLoadMore = { hasMore },
             loadMore = {
                 if (!isLoading && hasMore) {

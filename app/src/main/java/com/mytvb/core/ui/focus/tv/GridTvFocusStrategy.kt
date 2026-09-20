@@ -1,6 +1,8 @@
 package com.mytvb.core.ui.focus.tv
 
 import android.view.View
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.mytvb.core.common.log.AppLog
 
 class GridTvFocusStrategy(
@@ -9,6 +11,18 @@ class GridTvFocusStrategy(
 
     companion object {
         private const val TAG = "GridTvFocus"
+
+        /**
+         * 以 RecyclerView 当前的 LayoutManager 实际 spanCount 为单一事实来源构造策略。
+         * 不要在调用方硬编码列数：网格列数来自 adaptiveSpanCount()（分辨率档 × 卡片大小
+         * 偏移），硬编码值一旦与实际布局脱节，row/column 换算整体错位，方向键焦点会
+         * 斜跳到错误卡片（且行首放行框架后 FocusFinder 按真实几何找到的又是另一张卡）。
+         * 运行时 setSpanCount 的页面也因此自动保持一致。
+         */
+        fun from(recyclerView: RecyclerView, fallback: Int = 4): GridTvFocusStrategy =
+            GridTvFocusStrategy {
+                (recyclerView.layoutManager as? GridLayoutManager)?.spanCount ?: fallback
+            }
     }
 
     private val spanCount: Int

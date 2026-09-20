@@ -107,7 +107,7 @@ class LiveListFragment : BaseFragment<FragmentLiveListBinding>(), LiveTabPage {
         tvFocusController = TvListFocusController(
             recyclerView = binding.recyclerView,
             adapter = adapter,
-            strategy = GridTvFocusStrategy { 4 },
+            strategy = GridTvFocusStrategy.from(binding.recyclerView),
             canLoadMore = { viewModel.hasMore.value },
             loadMore = {
                 if (!viewModel.loading.value && viewModel.hasMore.value) {

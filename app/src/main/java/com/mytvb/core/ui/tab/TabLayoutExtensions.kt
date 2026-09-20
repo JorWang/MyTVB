@@ -4,9 +4,11 @@ import com.mytvb.core.ui.focus.SpatialFocusNavigator
 import com.mytvb.core.common.log.AppLog
 
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.widget.ViewPager2
@@ -34,7 +36,9 @@ fun TabLayout.enableTouchNavigation(
             val tabView = tabStrip.getChildAt(index)
             tabView.isClickable = true
             tabView.isFocusable = tabFocusable
+            bindTabTouchTextColor(tabView)
             if (tabFocusable) {
+                bindTabFocusTextColor(tabView)
                 tabView.setOnKeyListener { _, keyCode, event ->
                     if (event.action == KeyEvent.ACTION_DOWN) {
                         when (keyCode) {
@@ -92,6 +96,7 @@ fun TabLayout.enableTouchNavigation(
                 keepSelectedTabFocused(tabStrip, index, viewPager)
             }
         }
+        reapplyTextColorOnSelectionChange()
     }
 }
 
@@ -109,7 +114,9 @@ fun TabLayout.enableTouchNavigation(
             val tabView = tabStrip.getChildAt(index)
             tabView.isClickable = true
             tabView.isFocusable = tabFocusable
+            bindTabTouchTextColor(tabView)
             if (tabFocusable) {
+                bindTabFocusTextColor(tabView)
                 tabView.setOnKeyListener { _, keyCode, event ->
                     if (event.action == KeyEvent.ACTION_DOWN) {
                         when (keyCode) {
@@ -159,6 +166,7 @@ fun TabLayout.enableTouchNavigation(
                 }
             }
         }
+        reapplyTextColorOnSelectionChange()
     }
 }
 
@@ -197,6 +205,85 @@ fun TabLayout.focusNearestTabTo(anchorView: View?): Boolean {
 private fun consumeEdgeNavigation(action: () -> Unit): Boolean {
     action()
     return true
+}
+
+/**
+ * 焦点移入 tab 时文字提亮为选中色（白），避免默认灰字与焦点高亮色块融在一起难以辨认；
+ * 失焦后按 tab 自身选中状态恢复（选中→选中色，未选中→默认灰）。
+ * 颜色全部取自 tabTextColors（含 tabSelectedTextColor 合入后的 selected 态），不硬编码。
+ */
+private fun TabLayout.bindTabFocusTextColor(tabView: View) {
+    tabView.setOnFocusChangeListener { _, hasFocus ->
+        applyTabTextColor(tabView, hasFocus)
+    }
+    if (tabView.hasFocus()) {
+        applyTabTextColor(tabView, true)
+    }
+}
+
+/**
+ * 触摸按压 tab 时同样提亮文字，避免灰字与按压高亮色块融在一起；
+ * 抬起/取消后 post 恢复——此时 click 选中切换已完成，按最新焦点/选中状态取色。
+ */
+private fun TabLayout.bindTabTouchTextColor(tabView: View) {
+    tabView.setOnTouchListener { _, event ->
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> applyTabTextColor(tabView, true)
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
+                post { applyTabTextColor(tabView, tabView.hasFocus()) }
+        }
+        false
+    }
+}
+
+/**
+ * tab 选中被程序切换（非焦点触发，如 ViewPager 滑动/setCurrentItem）时，
+ * TabLayout 会按选中态重刷文字颜色，焦点 tab 的提亮可能被冲掉；选中变化后再校正一次。
+ */
+private fun TabLayout.reapplyTextColorOnSelectionChange() {
+    addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+        override fun onTabSelected(tab: TabLayout.Tab) {
+            post { refreshFocusedTabTextColor() }
+        }
+
+        override fun onTabUnselected(tab: TabLayout.Tab) = Unit
+        override fun onTabReselected(tab: TabLayout.Tab) = Unit
+    })
+}
+
+private fun TabLayout.refreshFocusedTabTextColor() {
+    val tabStrip = getChildAt(0) as? ViewGroup ?: return
+    for (index in 0 until tabStrip.childCount) {
+        val tabView = tabStrip.getChildAt(index) ?: continue
+        if (tabView.hasFocus()) {
+            applyTabTextColor(tabView, true)
+        }
+    }
+}
+
+private fun TabLayout.applyTabTextColor(tabView: View, hasFocus: Boolean) {
+    val textView = findFirstTextView(tabView)
+    val colors = tabTextColors
+    if (textView == null || colors == null) {
+        return
+    }
+    val selectedColor = colors.getColorForState(
+        intArrayOf(android.R.attr.state_selected),
+        colors.defaultColor
+    )
+    textView.setTextColor(if (hasFocus || tabView.isSelected) selectedColor else colors.defaultColor)
+}
+
+private fun findFirstTextView(view: View): TextView? {
+    if (view is TextView) {
+        return view
+    }
+    if (view is ViewGroup) {
+        for (index in 0 until view.childCount) {
+            findFirstTextView(view.getChildAt(index))?.let { return it }
+        }
+    }
+    return null
 }
 
 private fun TabLayout.keepSelectedTabFocused(

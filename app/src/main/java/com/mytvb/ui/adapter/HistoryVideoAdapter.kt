@@ -82,7 +82,9 @@ class HistoryVideoAdapter(
 
     override fun onBindContentViewHolder(holder: ViewHolder, position: Int) {
         val item = getItem(position) ?: return
-        holder.bind(item, position == focusedPosition)
+        // touch mode（触摸设备）下不给锚点位视觉状态：focusedPosition 会被 click 记录，
+        // 返回后数据刷新 rebind 时按它恢复 selected 会重现孤儿灰底（cf6ac562 补漏）
+        holder.bind(item, position == focusedPosition && !holder.itemView.isInTouchMode)
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {

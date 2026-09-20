@@ -90,7 +90,12 @@ class FavoriteHistoryAdapter(
                 if (previous != RecyclerView.NO_POSITION && previous != position) {
                     notifyItemChanged(previous)
                 }
-                setFocusedState(view, true)
+                // click（触摸）与 focus 共用此入口：touch mode 下点击的卡片没有真焦点，
+                // 手动 selected 设上后没有失焦回调可清，进播放返回会孤儿残留（同
+                // HistoryVideoAdapter cf6ac562）。只在真持有焦点或非 touch mode 时才给视觉。
+                if (view.hasFocus() || !view.isInTouchMode) {
+                    setFocusedState(view, true)
+                }
                 onItemFocusedWithView?.invoke(view, position)
             },
             clearFocusedPosition = { view ->
@@ -104,7 +109,9 @@ class FavoriteHistoryAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position), position == focusedPosition)
+        // touch mode（触摸设备）下不给锚点位视觉状态：focusedPosition 会被 click 记录，
+        // 返回后数据刷新 rebind 时按它恢复 selected 会重现孤儿灰底
+        holder.bind(getItem(position), position == focusedPosition && !holder.itemView.isInTouchMode)
     }
 
     override fun getItemViewType(position: Int): Int = contentViewType

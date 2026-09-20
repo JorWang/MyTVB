@@ -37,7 +37,15 @@ class RecyclerViewFocusOperator(
             return false
         }
         if (!recyclerView.isAttachedToWindow) {
-            AppLog.w(TAG, "focusPosition: pos=$position RV not attached, reason=$reason")
+            AppLog.d(TAG, "focusPosition: pos=$position RV not attached, reason=$reason")
+            return false
+        }
+        // touch mode（触摸屏/鼠标）下卡片一律不聚焦：触摸用户不需要焦点，强行聚焦
+        // 会退出 touch mode 并把焦点框砸到卡片上（关注/页面刷新后自动冒焦点的来源）。
+        // 遥控用户非 touch mode 不受影响；触摸后改用遥控时框架会在首个 DPAD 键自动
+        // 退出 touch mode，焦点链路随之恢复。
+        if (recyclerView.isInTouchMode) {
+            AppLog.d(TAG, "focusPosition: pos=$position skip, touch mode, reason=$reason")
             return false
         }
         if (position != pendingFocusPosition) {
@@ -157,6 +165,9 @@ class RecyclerViewFocusOperator(
         onFocused: ((Int) -> Unit)? = null,
         maxCandidates: Int = Int.MAX_VALUE
     ): Boolean {
+        if (recyclerView.isInTouchMode) {
+            return false
+        }
         val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return false
         val itemCount = adapter.focusableItemCount()
         if (itemCount <= 0) {
@@ -195,6 +206,9 @@ class RecyclerViewFocusOperator(
         spanCount: Int,
         onFocused: ((Int) -> Unit)? = null
     ): Boolean {
+        if (recyclerView.isInTouchMode) {
+            return false
+        }
         val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return false
         if (layoutManager !is GridLayoutManager) return false
         val itemCount = adapter.focusableItemCount()
@@ -244,6 +258,11 @@ class RecyclerViewFocusOperator(
         }
         if (!itemView.isFocusable) {
             AppLog.w(TAG, "requestFocus: pos=$position not focusable")
+            return false
+        }
+        if (itemView.isInTouchMode) {
+            // touch mode 下卡片不聚焦（见 focusPosition 入口注释），此处兜底挡直连调用
+            AppLog.d(TAG, "requestFocus: pos=$position skip, touch mode")
             return false
         }
         val handled = itemView.requestFocus()

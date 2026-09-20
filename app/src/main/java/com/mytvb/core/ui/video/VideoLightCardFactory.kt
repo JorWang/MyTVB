@@ -17,7 +17,6 @@ import android.text.TextPaint
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.TypedValue
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -38,11 +37,9 @@ object VideoLightCardFactory {
             id = R.id.click_view
             isClickable = true
             isFocusable = true
-            // 鼠标/触摸操作（模拟器验证、个别盒子接鼠标）会把窗口切进 touch mode：
-            // 此时仅 focusable=true 的 view 的 requestFocus() 直接返回 false，
-            // 从播放器返回后的焦点恢复会全部失败（RVFocusOp: requestFocus returned FALSE）。
-            // TV 卡片按惯例同时允许 touch mode 聚焦，遥控器行为不受影响。
-            isFocusableInTouchMode = true
+            // 卡片刻意不设 focusableInTouchMode：触摸/鼠标按下会把焦点抢到被按的卡片上，
+            // 列表滑动时焦点随每次按下的位置乱跳（滚动加载后 pos 一路后跑）。
+            // touch mode 下的程序化聚焦由 RecyclerViewFocusOperator 在入口统一挡掉（touch mode 让路）。
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 defaultFocusHighlightEnabled = false
             }
@@ -828,15 +825,6 @@ private class FlatVideoLightCardLayout @JvmOverloads constructor(
     private var titleRowHeight = 0
     private var lastContentWidth = -1
     private var lastDesiredHeight = -1
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        // focusableInTouchMode 的卡片首次 tap 会被框架先抢焦点（不 pressed、不 performClick），
-        // 先手动聚焦再走 super，让第一次点击同时完成聚焦与点击。
-        if (event.actionMasked == MotionEvent.ACTION_DOWN && !isFocused) {
-            requestFocus()
-        }
-        return super.onTouchEvent(event)
-    }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val startNs = SystemClock.elapsedRealtimeNanos()

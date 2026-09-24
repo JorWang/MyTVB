@@ -149,16 +149,25 @@ object ApkUpdater {
 
             val releaseNotes = json.optString("body", "").trim()
 
+            // Release 同时挂着 release/debug 两个包，assets 顺序不保证（并行上传），
+            // 必须显式挑 release 包，否则可能把 debug 包推给用户
             val assets = json.optJSONArray("assets") ?: error("没有找到附件")
-            var apkUrl = ""
+            var releaseApkUrl = ""
+            var fallbackApkUrl = ""
             for (i in 0 until assets.length()) {
                 val asset = assets.getJSONObject(i)
                 val name = asset.optString("name", "")
-                if (name.endsWith(".apk", ignoreCase = true)) {
-                    apkUrl = asset.optString("browser_download_url", "")
+                if (!name.endsWith(".apk", ignoreCase = true)) continue
+                if (name.endsWith("-debug.apk", ignoreCase = true)) continue
+                val url = asset.optString("browser_download_url", "")
+                if (url.isBlank()) continue
+                if (name.endsWith("-release.apk", ignoreCase = true)) {
+                    releaseApkUrl = url
                     break
                 }
+                if (fallbackApkUrl.isBlank()) fallbackApkUrl = url
             }
+            val apkUrl = releaseApkUrl.ifBlank { fallbackApkUrl }
             check(apkUrl.isNotBlank()) { "Release 中没有找到 APK 文件" }
 
             return ReleaseInfo(

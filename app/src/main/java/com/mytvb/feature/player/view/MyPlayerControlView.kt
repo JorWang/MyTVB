@@ -88,6 +88,7 @@ class MyPlayerControlView @JvmOverloads constructor(
     private lateinit var buttonFastForward: ImageView
     private lateinit var buttonDmSwitch: ImageView
     private lateinit var buttonMirror: ImageView
+    private lateinit var buttonPlaySpeed: ImageView
     private lateinit var buttonSettings: ImageView
     private lateinit var buttonChooseEpisode: ImageView
     private lateinit var buttonMore: ImageView
@@ -183,6 +184,7 @@ class MyPlayerControlView @JvmOverloads constructor(
         buttonFastForward = findViewById(R.id.button_fast_forward)
         buttonDmSwitch = findViewById(R.id.button_dm_switch)
         buttonMirror = findViewById(R.id.button_mirror)
+        buttonPlaySpeed = findViewById(R.id.button_play_speed)
         buttonSettings = findViewById(R.id.exo_settings)
         buttonChooseEpisode = findViewById(R.id.button_choose_episode)
         buttonMore = findViewById(R.id.button_more)
@@ -234,6 +236,7 @@ class MyPlayerControlView @JvmOverloads constructor(
             buttonFastForward,
             buttonDmSwitch,
             buttonMirror,
+            buttonPlaySpeed,
             buttonSettings,
             buttonChooseEpisode,
             buttonMore,
@@ -295,6 +298,11 @@ class MyPlayerControlView @JvmOverloads constructor(
             val label = if (mirrorEnabled) context.getString(R.string.on) else context.getString(R.string.off)
             Toast.makeText(context, "${context.getString(R.string.screen_mirror)}：$label", Toast.LENGTH_SHORT).show()
             onVideoSettingChangeListener?.onMirrorChange(mirrorEnabled)
+        }
+
+        buttonPlaySpeed.setOnClickListener {
+            resetHideCallbacks()
+            onVideoSettingChangeListener?.onPlaybackSpeedClick()
         }
 
         buttonSettings.setOnClickListener {
@@ -537,6 +545,10 @@ class MyPlayerControlView @JvmOverloads constructor(
 
     fun showHideMirrorButton(show: Boolean) {
         setButtonVisibility(buttonMirror, show)
+    }
+
+    fun showHidePlaySpeedButton(show: Boolean) {
+        setButtonVisibility(buttonPlaySpeed, show)
     }
 
     fun showHideNextPrevious(show: Boolean) {
@@ -902,6 +914,7 @@ class MyPlayerControlView @JvmOverloads constructor(
             buttonFastForward,
             buttonDmSwitch,
             buttonMirror,
+            buttonPlaySpeed,
             buttonSettings,
             buttonChooseEpisode,
             buttonMore,

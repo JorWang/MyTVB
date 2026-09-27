@@ -367,6 +367,9 @@
     <string name="show_debug">显示视频调试信息</string>
     <string name="show_dm_switch">显示弹幕开关按钮</string>
     <string name="show_next_previous">显示上下集切换按钮</string>
+    <string name="show_play_speed_button">显示播放速度设置按键</string>
+    <string name="show_playback_rate">常驻显示播放倍率</string>
+    <string name="music_zone_normal_speed">音乐区视频默认1倍速</string>
     <string name="show_subtitle_default">字幕设置</string>
     <string name="side_sheet_accessibility_pane_title">Side Sheet</string>
     <string name="side_sheet_behavior">com.google.android.material.sidesheet.SideSheetBehavior</string>

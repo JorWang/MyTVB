@@ -106,6 +106,9 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         private const val KEY_GIVE_COIN_NUMBER = "give_coin_number"
         private const val KEY_SHOW_NEXT_PREVIOUS = "show_next_previous"
         private const val KEY_SHOW_DM_SWITCH = "show_dm_switch"
+        private const val KEY_SHOW_PLAY_SPEED_BUTTON = "show_play_speed_button"
+        private const val KEY_SHOW_PLAYBACK_RATE = "show_playback_rate"
+        private const val KEY_MUSIC_ZONE_NORMAL_SPEED = "music_zone_normal_speed"
         private const val KEY_DM_SWITCH = "dm_enable"
         private const val KEY_DM_ALPHA = "dm_alpha"
         private const val KEY_DM_TEXT_SIZE = "dm_text_size"
@@ -238,22 +241,27 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             SettingModel("X5内核替换", "未安装")
         )
 
+        // 播放设置项顺序即点击/恢复逻辑的下标来源（handlePlayerSettingClick / restoreSavedSettings），
+        // 调整顺序时两处必须同步。
         playerSettings = mutableListOf(
-            SettingModel(getString(R.string.default_video_quality), "1080P"),
-            SettingModel(getString(R.string.default_audio_track), "192kbps"),
-            SettingModel(getString(R.string.default_play_speed), "1.0"),
-            SettingModel(getString(R.string.after_play), "播推荐视频"),
-            SettingModel(getString(R.string.play_finish_exit_player), "开"),
-            SettingModel(getString(R.string.video_codec), "HEVC"),
-            SettingModel(getString(R.string.show_subtitle_default), "自动字幕"),
-            SettingModel(getString(R.string.subtitle_text_size), "45"),
-            SettingModel(getString(R.string.show_debug), "关"),
-            SettingModel(getString(R.string.show_bottom_progress_bar), "关"),
-            SettingModel(getString(R.string.show_next_previous), "关"),
-            SettingModel(getString(R.string.resume_playback), "开"),
-            SettingModel("空降助手", "关"),
-            SettingModel("音量均衡", "关"),
-            SettingModel("无缝切换清晰度", "关")
+            SettingModel(getString(R.string.default_video_quality), "1080P"),      // 0
+            SettingModel(getString(R.string.default_audio_track), "192kbps"),      // 1
+            SettingModel(getString(R.string.default_play_speed), "1.0"),           // 2
+            SettingModel(getString(R.string.music_zone_normal_speed), "关"),        // 3 与倍速同组
+            SettingModel(getString(R.string.after_play), "播推荐视频"),             // 4
+            SettingModel(getString(R.string.play_finish_exit_player), "开"),        // 5
+            SettingModel(getString(R.string.video_codec), "HEVC"),                 // 6
+            SettingModel(getString(R.string.show_subtitle_default), "自动字幕"),     // 7
+            SettingModel(getString(R.string.subtitle_text_size), "45"),            // 8
+            SettingModel(getString(R.string.show_playback_rate), "关"),            // 9 常驻显示播放倍率
+            SettingModel(getString(R.string.show_play_speed_button), "关"),        // 10 显示播放速度设置按键
+            SettingModel(getString(R.string.show_debug), "关"),                    // 11
+            SettingModel(getString(R.string.show_bottom_progress_bar), "关"),       // 12
+            SettingModel(getString(R.string.show_next_previous), "关"),            // 13
+            SettingModel(getString(R.string.resume_playback), "开"),               // 14
+            SettingModel("空降助手", "关"),                                        // 15
+            SettingModel("音量均衡", "关"),                                        // 16
+            SettingModel("无缝切换清晰度", "关")                                    // 17
         )
 
         dmSettings = mutableListOf(
@@ -562,28 +570,31 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         when (position) {
             0 -> showPlayerChoiceDialog(position, KEY_DEFAULT_VIDEO_QUALITY, arrayOf("自动", "8K", "杜比视界", "HDR Vivid", "HDR", "4K", "1080P60", "1080P+", "智能修复", "1080P", "720P60", "720P", "480P", "360P", "240P"))
             1 -> showPlayerChoiceDialog(position, KEY_DEFAULT_AUDIO_TRACK, arrayOf("192kbps", "132kbps", "64kbps", "杜比全景声", "Hi-Res无损"))
-            2 -> showPlayerChoiceDialog(position, KEY_DEFAULT_PLAY_SPEED, arrayOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "2.0"))
-            3 -> showPlayerChoiceDialog(position, KEY_AFTER_PLAY, arrayOf("什么都不做", "播推荐视频", "播列表中的下一个", "播放合集中的下一个"))
-            4 -> toggleSetting(playerSettings, 4, KEY_PLAY_FINISH_EXIT_PLAYER)
-            5 -> showPlayerChoiceDialog(position, KEY_VIDEO_CODEC, arrayOf("AVC", "HEVC", "AV1"))
-            6 -> showPlayerChoiceDialog(position, KEY_SUBTITLE_DEFAULT_MODE, arrayOf("关闭字幕", "开启字幕", "自动字幕"))
-            7 -> showPlayerChoiceDialog(position, KEY_SUBTITLE_TEXT_SIZE, arrayOf("35", "40", "45", "50", "55", "60"))
-            8 -> toggleSetting(playerSettings, 8, KEY_SHOW_DEBUG)
-            9 -> toggleSetting(playerSettings, 9, KEY_SHOW_BOTTOM_PROGRESS_BAR)
-            10 -> toggleSetting(playerSettings, 10, KEY_SHOW_NEXT_PREVIOUS)
-            11 -> toggleSetting(playerSettings, 11, KEY_RESUME_PLAYBACK)
-            12 -> toggleSponsorBlock()
-            13 -> showChoiceDialog(
-                playerSettings[13].title,
-                playerSettings[13].info,
+            2 -> showPlayerChoiceDialog(position, KEY_DEFAULT_PLAY_SPEED, arrayOf("0.25", "0.5", "0.75", "1.0", "1.25", "1.5", "2.0", "3.0"))
+            3 -> toggleSetting(playerSettings, 3, KEY_MUSIC_ZONE_NORMAL_SPEED)
+            4 -> showPlayerChoiceDialog(position, KEY_AFTER_PLAY, arrayOf("什么都不做", "播推荐视频", "播列表中的下一个", "播放合集中的下一个"))
+            5 -> toggleSetting(playerSettings, 5, KEY_PLAY_FINISH_EXIT_PLAYER)
+            6 -> showPlayerChoiceDialog(position, KEY_VIDEO_CODEC, arrayOf("AVC", "HEVC", "AV1"))
+            7 -> showPlayerChoiceDialog(position, KEY_SUBTITLE_DEFAULT_MODE, arrayOf("关闭字幕", "开启字幕", "自动字幕"))
+            8 -> showPlayerChoiceDialog(position, KEY_SUBTITLE_TEXT_SIZE, arrayOf("35", "40", "45", "50", "55", "60"))
+            9 -> toggleSetting(playerSettings, 9, KEY_SHOW_PLAYBACK_RATE)
+            10 -> toggleSetting(playerSettings, 10, KEY_SHOW_PLAY_SPEED_BUTTON)
+            11 -> toggleSetting(playerSettings, 11, KEY_SHOW_DEBUG)
+            12 -> toggleSetting(playerSettings, 12, KEY_SHOW_BOTTOM_PROGRESS_BAR)
+            13 -> toggleSetting(playerSettings, 13, KEY_SHOW_NEXT_PREVIOUS)
+            14 -> toggleSetting(playerSettings, 14, KEY_RESUME_PLAYBACK)
+            15 -> toggleSponsorBlock()
+            16 -> showChoiceDialog(
+                playerSettings[16].title,
+                playerSettings[16].info,
                 AUDIO_BALANCE_OPTIONS
             ) { value ->
-                updateSetting(playerSettings, 13, value)
+                updateSetting(playerSettings, 16, value)
                 appSettings.putStringAsync(KEY_AUDIO_BALANCE, value)
                 // 刷新全局档位：正在播放的 player 下一个音频块即生效，无需重建播放器。
                 AudioBalanceSettings.applySettingValue(value)
             }
-            14 -> toggleSetting(playerSettings, 14, KEY_SEAMLESS_QUALITY_SWITCH)
+            17 -> toggleSetting(playerSettings, 17, KEY_SEAMLESS_QUALITY_SWITCH)
         }
     }
 
@@ -1115,25 +1126,28 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         applySavedValue(playerSettings, 0, KEY_DEFAULT_VIDEO_QUALITY)
         applySavedValue(playerSettings, 1, KEY_DEFAULT_AUDIO_TRACK)
         applySavedValue(playerSettings, 2, KEY_DEFAULT_PLAY_SPEED)
-        applySavedValue(playerSettings, 3, KEY_AFTER_PLAY)
-        applySavedValue(playerSettings, 4, KEY_PLAY_FINISH_EXIT_PLAYER)
-        applySavedValue(playerSettings, 5, KEY_VIDEO_CODEC)
+        applySavedValue(playerSettings, 3, KEY_MUSIC_ZONE_NORMAL_SPEED)
+        applySavedValue(playerSettings, 4, KEY_AFTER_PLAY)
+        applySavedValue(playerSettings, 5, KEY_PLAY_FINISH_EXIT_PLAYER)
+        applySavedValue(playerSettings, 6, KEY_VIDEO_CODEC)
         // 字幕设置项：读新 key（subtitle_default_mode），未选过时默认显示"自动字幕"
-        playerSettings.getOrNull(6)?.info = subtitleModeDisplayName(
+        playerSettings.getOrNull(7)?.info = subtitleModeDisplayName(
             appSettings.getCachedString(KEY_SUBTITLE_DEFAULT_MODE)
         )
-        applySavedValue(playerSettings, 7, KEY_SUBTITLE_TEXT_SIZE)
-        applySavedValue(playerSettings, 8, KEY_SHOW_DEBUG)
-        applySavedValue(playerSettings, 9, KEY_SHOW_BOTTOM_PROGRESS_BAR)
-        applySavedValue(playerSettings, 10, KEY_SHOW_NEXT_PREVIOUS)
-        applySavedValue(playerSettings, 11, KEY_RESUME_PLAYBACK)
-        applySavedValue(playerSettings, 12, KEY_SPONSOR_BLOCK_ENABLED)
+        applySavedValue(playerSettings, 8, KEY_SUBTITLE_TEXT_SIZE)
+        applySavedValue(playerSettings, 9, KEY_SHOW_PLAYBACK_RATE)
+        applySavedValue(playerSettings, 10, KEY_SHOW_PLAY_SPEED_BUTTON)
+        applySavedValue(playerSettings, 11, KEY_SHOW_DEBUG)
+        applySavedValue(playerSettings, 12, KEY_SHOW_BOTTOM_PROGRESS_BAR)
+        applySavedValue(playerSettings, 13, KEY_SHOW_NEXT_PREVIOUS)
+        applySavedValue(playerSettings, 14, KEY_RESUME_PLAYBACK)
+        applySavedValue(playerSettings, 15, KEY_SPONSOR_BLOCK_ENABLED)
         // 音量均衡：新 key（关/低/中/高）优先显示；未设置过时旧布尔"开"显示为"中"。
-        playerSettings.getOrNull(13)?.info = audioBalanceDisplayName(
+        playerSettings.getOrNull(16)?.info = audioBalanceDisplayName(
             appSettings.getCachedString(KEY_AUDIO_BALANCE),
             appSettings.getCachedString(KEY_AUDIO_NORMALIZE_LEGACY)
         )
-        applySavedValue(playerSettings, 14, KEY_SEAMLESS_QUALITY_SWITCH)
+        applySavedValue(playerSettings, 17, KEY_SEAMLESS_QUALITY_SWITCH)
 
         applySavedValue(dmSettings, 0, KEY_DM_SWITCH)
         applySavedValue(dmSettings, 1, KEY_DM_ALPHA)
@@ -1487,10 +1501,10 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
     }
 
     private fun toggleSponsorBlock() {
-        val setting = playerSettings.getOrNull(12) ?: return
+        val setting = playerSettings.getOrNull(15) ?: return
         val currentValue = setting.info
         val newValue = if (currentValue == "开") "关" else "开"
-        updateSetting(playerSettings, 12, newValue)
+        updateSetting(playerSettings, 15, newValue)
         appSettings.putStringAsync(KEY_SPONSOR_BLOCK_ENABLED, newValue)
 
         if (newValue == "关") {

@@ -176,6 +176,7 @@ class MyPlayerView @JvmOverloads constructor(
     private var pendingEpisodeNavigationEnabled: Pair<Boolean, Boolean>? = null
     private var pendingDmSwitchVisible: Boolean? = null
     private var pendingMirrorVisible: Boolean? = null
+    private var pendingPlaySpeedButtonVisible: Boolean? = null
     private var pendingNextPreviousVisible: Boolean? = null
     private var pendingFfReVisible: Boolean? = null
     private var pendingEpisodeButtonVisible: Boolean? = null
@@ -350,6 +351,29 @@ class MyPlayerView @JvmOverloads constructor(
     // 默认行为 performClick 再次切换，导致一次按下切换两次、互相抵消（小米电视复现）。
     private var consumedOkKeyUp = false
 
+    // OK/Enter 长按临时 2 倍速：控制栏隐藏且正在播放时，按住 OK 超过 okLongPressDelayMs
+    // 进入 2x（记录原速），松手还原；短按（未到阈值即松手）仍走原有播放/暂停逻辑。
+    private val okLongPressDelayMs = 500L
+    private var okLongPressRunnable: Runnable? = null
+    private var okLongPressTriggered = false
+    private var okPressPending = false
+    private var okLongPressOriginalSpeed = 1f
+    private var okSpeedBadge: TextView? = null
+
+    // 长按加速倍数（原速 ×2，不设上限）
+    private val MAX_PLAYBACK_SPEED_MULTIPLIER = 2f
+
+    // 是否由"控制栏可见"状态进入长按（可见态不吞 DOWN，短按要放行给焦点按钮）
+    private var okLongPressFromController = false
+
+    // 2x 结束后的 OK 抖动屏蔽窗口：部分遥控器松手会多送一次 DOWN/UP，
+    // 若不屏蔽会被当成短按触发播放/暂停并把下侧菜单召回。
+    private val okReleaseGraceMs = 500L
+    private var okReleaseGraceDeadlineMs = 0L
+
+    // "常驻显示播放倍率"开关：开启且非 1 倍速时，右下角常驻显示当前倍率
+    private var persistentRateEnabled = false
+
     // --- Timebar-focused seek state (fixed 10s step, interval decreases with hold time) ---
     private var timebarSeekActive = false
     private var timebarSeekForward = true
@@ -449,6 +473,10 @@ class MyPlayerView @JvmOverloads constructor(
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
+            // 长按加速期间若播放被中断（暂停/播放结束），立即还原原速，避免卡在 2x
+            if (!isPlaying) {
+                cancelOkLongPressSpeed()
+            }
             activeDanmakuController()?.notifyIsPlayingChanged(isPlaying)
             // 进入/退出播放态时立即推一次播放器 clock，和官方 onPlayerClockChanged 时机对齐。
             player?.let {
@@ -677,6 +705,7 @@ class MyPlayerView @JvmOverloads constructor(
         pendingEpisodeNavigationEnabled?.let { target.setEpisodeNavigationEnabled(it.first, it.second) }
         pendingDmSwitchVisible?.let(target::showHideDmSwitchButton)
         pendingMirrorVisible?.let(target::showHideMirrorButton)
+        pendingPlaySpeedButtonVisible?.let(target::showHidePlaySpeedButton)
         pendingNextPreviousVisible?.let(target::showHideNextPrevious)
         pendingFfReVisible?.let(target::showHideFfRe)
         pendingEpisodeButtonVisible?.let(target::showHideEpisodeButton)
@@ -1143,6 +1172,7 @@ class MyPlayerView @JvmOverloads constructor(
         handleTimebarSeekKeys(event)?.let { return it }
         handleTapCommitSeekKeys(event)?.let { return it }
         handleDoubleTapModeKeys(event)?.let { return it }
+        handleOkLongPressSpeed(event)?.let { return it }
         handleControllerDpadKeys(event)?.let { return it }
         return dispatchMediaAndSuperFallbackKeys(event)
     }
@@ -1293,6 +1323,169 @@ class MyPlayerView @JvmOverloads constructor(
     }
 
     /**
+     * OK/Enter 长按临时 2 倍速：正在播放（且无 seek/双击会话）时，按住 OK 超过
+     * okLongPressDelayMs 进入 原速×2；松手还原原速。
+     * - 下侧菜单（控制栏）显示中：长按先收起控制栏再进入加速；
+     * - 控制栏可见时不吞 DOWN，短按仍正常落到焦点按钮上；
+     * - 加速结束后的 okReleaseGraceMs 内吞掉 OK 抖动，避免召回下侧菜单。
+     * 返回 true 表示消费该按键，null 表示不处理、继续后续分发。
+     */
+    private fun handleOkLongPressSpeed(event: KeyEvent): Boolean? {
+        val isOk = event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER || event.keyCode == KeyEvent.KEYCODE_ENTER
+        if (!isOk) return null
+        if (!useController()) return null
+
+        // 抖动屏蔽窗口：吞掉多余的 DOWN/UP，且不触发任何播放/UI 动作
+        if (SystemClock.elapsedRealtime() < okReleaseGraceDeadlineMs) {
+            okLongPressRunnable?.let { removeCallbacks(it) }
+            okLongPressRunnable = null
+            okPressPending = false
+            return true
+        }
+
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            // 追踪中/已触发的 repeat：吞掉，避免落到按钮上触发长按
+            if (okPressPending || okLongPressTriggered) return true
+            // 首次 DOWN 之外的重复事件不重复起跟踪（否则会把"暂停态按下切播放"误判成长按）
+            if (event.repeatCount > 0) return null
+            if (player?.isPlaying != true) return null
+            if (gestureListener.isDoubleTapping || timebarSeekActive || seekSession?.isActive() == true) return null
+
+            val controllerVisible = controller?.isFullyVisible() == true
+            okLongPressFromController = controllerVisible
+            okLongPressOriginalSpeed = player?.playbackParameters?.speed ?: 1f
+            okPressPending = true
+            val runnable = Runnable {
+                if (okPressPending) {
+                    okPressPending = false
+                    okLongPressTriggered = true
+                    // 下侧菜单显示中：先关闭它，再进入临时倍速
+                    if (controllerVisible) {
+                        hideController()
+                    }
+                    // 原速 ×2（不限上限）
+                    setPlaySpeed(okLongPressOriginalSpeed * MAX_PLAYBACK_SPEED_MULTIPLIER)
+                }
+            }
+            okLongPressRunnable = runnable
+            postDelayed(runnable, okLongPressDelayMs)
+            // 控制栏可见：DOWN 放行给焦点按钮（短按要能正常点击），只做长按计时
+            return if (controllerVisible) null else true
+        }
+
+        if (event.action == KeyEvent.ACTION_UP) {
+            if (okPressPending || okLongPressTriggered) {
+                okLongPressRunnable?.let { removeCallbacks(it) }
+                okLongPressRunnable = null
+                val fromController = okLongPressFromController
+                okPressPending = false
+                if (okLongPressTriggered) {
+                    okLongPressTriggered = false
+                    setPlaySpeed(okLongPressOriginalSpeed)
+                    // 松手后开一个抖动屏蔽窗口，避免多余按键召回下侧菜单
+                    okReleaseGraceDeadlineMs = SystemClock.elapsedRealtime() + okReleaseGraceMs
+                    return true
+                }
+                // 短按：控制栏可见时放行（交给原逻辑处理按钮点击），隐藏态走原有播放/暂停
+                if (fromController) {
+                    return null
+                }
+                maybeShowController(true)
+                controller?.togglePlayPauseFromKey()
+                return true
+            }
+            return null
+        }
+        return null
+    }
+
+    /**
+     * 倍速角标显隐统一入口：
+     * - 长按加速期间常驻显示当前倍速（含 0.5x→1x 这类落到 1x 的情况）；
+     * - 开启"常驻显示播放倍率"且当前非 1 倍速时常驻显示；
+     * - 其余情况隐藏。
+     */
+    private fun refreshSpeedBadge() {
+        val speed = player?.playbackParameters?.speed ?: 1f
+        when {
+            okLongPressTriggered -> showSpeedBadge(acceleratedSpeedLabel())
+            persistentRateEnabled && speed != 1f -> showSpeedBadge(formatSpeedLabel(speed))
+            else -> hideSpeedBadge()
+        }
+    }
+
+    /**
+     * 长按加速文案：原速为 1x 时显示"2x"；原速非 1x 时显示"2x"+原速（如 2x1.5x），
+     * 明确表达"在原倍速基础上再翻倍"，避免只看到结果倍速而误以为是绝对 2x。
+     */
+    private fun acceleratedSpeedLabel(): String {
+        if (okLongPressOriginalSpeed == 1f) return "2x"
+        return "2x${formatSpeedLabel(okLongPressOriginalSpeed)}"
+    }
+
+    private fun showSpeedBadge(text: String) {
+        val badge = okSpeedBadge ?: createOkSpeedBadge().also { okSpeedBadge = it }
+        badge.text = text
+        badge.visibility = VISIBLE
+        badge.bringToFront()
+    }
+
+    private fun hideSpeedBadge() {
+        okSpeedBadge?.visibility = GONE
+    }
+
+    /** 倍速文案：整数档显示 "2x"，小数档显示 "1.25x"。 */
+    private fun formatSpeedLabel(speed: Float): String {
+        val rounded = kotlin.math.round(speed * 100f) / 100f
+        return if (rounded % 1f == 0f) "${rounded.toInt()}x" else "${rounded}x"
+    }
+
+    /** 常驻显示当前播放倍率（设置项开关）。 */
+    fun showPlaybackRateIndicator(show: Boolean) {
+        persistentRateEnabled = show
+        refreshSpeedBadge()
+    }
+
+    private fun createOkSpeedBadge(): TextView {
+        val badge = AppCompatTextView(context).apply {
+            text = "2x"
+            setTextColor(Color.WHITE)
+            textSize = 16f
+            gravity = Gravity.CENTER
+            val padH = dp(10)
+            val padV = dp(4)
+            setPadding(padH, padV, padH, padV)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(6).toFloat()
+                setColor(0xB3000000.toInt())
+            }
+            visibility = GONE
+        }
+        addView(
+            badge,
+            LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.BOTTOM or Gravity.END
+                bottomMargin = dp(16)
+                marginEnd = dp(16)
+            }
+        )
+        return badge
+    }
+
+    /** 取消 OK 长按加速并还原原速（视图销毁、播放中断等异常路径兜底）。 */
+    private fun cancelOkLongPressSpeed() {
+        okLongPressRunnable?.let { removeCallbacks(it) }
+        okLongPressRunnable = null
+        okPressPending = false
+        if (okLongPressTriggered) {
+            okLongPressTriggered = false
+            setPlaySpeed(okLongPressOriginalSpeed)
+        } else {
+            refreshSpeedBadge()
+        }
+    }
+
+    /**
      * 控制栏可见性相关的 D-pad 分发。可见态：seek 键路由（timebar 持焦优先）、
      * DOWN 打开相关视频面板；隐藏态：抖音式导航、OK 直切播放暂停（厂商补丁）、
      * 方向键聚焦按钮，隐藏态一律消费按键。返回 null 继续媒体键/super 兜底。
@@ -1314,6 +1507,15 @@ class MyPlayerView @JvmOverloads constructor(
             if (seekSession?.isActive() == true || pendingHoldStartRunnable != null) {
                 return handleSeekSessionKeyEvent(event)
             }
+        }
+        // 控制栏可见且焦点已在其最上一行（进度条）时，UP 直接收起下侧菜单（与返回键同效）
+        if (controllerVisible
+            && event.keyCode == KeyEvent.KEYCODE_DPAD_UP
+            && event.action == KeyEvent.ACTION_DOWN
+            && controller?.isTimebarFocused() == true
+        ) {
+            hideController()
+            return true
         }
         // When controller is visible and a button (not timebar) has focus,
         // pressing DOWN opens the related videos panel if the related button is visible.
@@ -2211,6 +2413,7 @@ class MyPlayerView @JvmOverloads constructor(
         player?.playbackParameters = PlaybackParameters(speed)
         settingView?.setCurrentSpeed(speed)
         activeDanmakuController()?.updatePlaybackSpeed(speed)
+        refreshSpeedBadge()
     }
 
     fun setAfterPlayMode(mode: com.mytvb.feature.player.settings.AfterPlayMode) {
@@ -2260,6 +2463,17 @@ class MyPlayerView @JvmOverloads constructor(
     fun showHideDmSwitchButton(show: Boolean) {
         pendingDmSwitchVisible = show
         controller?.showHideDmSwitchButton(show)
+    }
+
+    fun showHidePlaySpeedButton(show: Boolean) {
+        pendingPlaySpeedButtonVisible = show
+        controller?.showHidePlaySpeedButton(show)
+    }
+
+    /** 播放页直接改倍速：打开设置面板的"播放速度"子菜单。 */
+    fun showPlaybackSpeedSettingView() {
+        controller?.rememberCurrentFocusTarget()
+        settingView?.showPlaybackSpeedMenu()
     }
 
     fun setMirrorEnabled(enabled: Boolean) {
@@ -2777,6 +2991,7 @@ class MyPlayerView @JvmOverloads constructor(
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        cancelOkLongPressSpeed()
         stopUiFrameMonitor()
     }
 

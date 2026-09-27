@@ -37,6 +37,12 @@ data class PlayerSettings(
     val showRewindFastForward: Boolean = false,
     val showNextPrevious: Boolean = false,
     val showDanmakuSwitch: Boolean = false,
+    // 播放页控制栏常驻"播放速度"按键：开启后可在播放页直接改倍速（临时生效）。
+    val showPlaySpeedButton: Boolean = false,
+    // 常驻显示播放倍率：开启后非 1 倍速时在播放页右下角常驻显示当前倍率。
+    val showPlaybackRate: Boolean = false,
+    // 音乐区视频默认 1 倍速：开启后即便设置了默认倍速，音乐区视频起播仍按 1.0x。
+    val musicZoneNormalSpeed: Boolean = false,
     val fastSeekSeconds: Int = 10,
     val resumePlayback: Boolean = true,
     val sponsorBlockEnabled: Boolean = false,
@@ -76,6 +82,9 @@ object PlayerSettingsStore {
     private const val KEY_SHOW_BOTTOM_PROGRESS_BAR = "show_bottom_progress_bar"
     private const val KEY_SHOW_NEXT_PREVIOUS = "show_next_previous"
     private const val KEY_SHOW_DM_SWITCH = "show_dm_switch"
+    private const val KEY_SHOW_PLAY_SPEED_BUTTON = "show_play_speed_button"
+    private const val KEY_SHOW_PLAYBACK_RATE = "show_playback_rate"
+    private const val KEY_MUSIC_ZONE_NORMAL_SPEED = "music_zone_normal_speed"
     private const val KEY_FF_SEEK_SECOND = "ff_seek_second"
     private const val KEY_RESUME_PLAYBACK = "resume_playback"
     private const val KEY_SPONSOR_BLOCK_ENABLED = "sponsor_block_enabled"
@@ -117,6 +126,12 @@ object PlayerSettingsStore {
             append(readSetting(KEY_SHOW_NEXT_PREVIOUS).orEmpty())
             append("|")
             append(readSetting(KEY_SHOW_DM_SWITCH).orEmpty())
+            append("|")
+            append(readSetting(KEY_SHOW_PLAY_SPEED_BUTTON).orEmpty())
+            append("|")
+            append(readSetting(KEY_SHOW_PLAYBACK_RATE).orEmpty())
+            append("|")
+            append(readSetting(KEY_MUSIC_ZONE_NORMAL_SPEED).orEmpty())
             append("|")
             append(readSetting(KEY_FF_SEEK_SECOND).orEmpty())
             append("|")
@@ -193,6 +208,18 @@ object PlayerSettingsStore {
             ),
             showDanmakuSwitch = parseToggle(
                 readSetting(KEY_SHOW_DM_SWITCH),
+                defaultValue = false
+            ),
+            showPlaySpeedButton = parseToggle(
+                readSetting(KEY_SHOW_PLAY_SPEED_BUTTON),
+                defaultValue = false
+            ),
+            showPlaybackRate = parseToggle(
+                readSetting(KEY_SHOW_PLAYBACK_RATE),
+                defaultValue = false
+            ),
+            musicZoneNormalSpeed = parseToggle(
+                readSetting(KEY_MUSIC_ZONE_NORMAL_SPEED),
                 defaultValue = false
             ),
             fastSeekSeconds = readSetting(KEY_FF_SEEK_SECOND)

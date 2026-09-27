@@ -1079,6 +1079,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
                 Toast.makeText(applicationContext, if (currentPlayer.repeatMode == Player.REPEAT_MODE_ONE) "单集循环" else "顺序播放", Toast.LENGTH_SHORT).show()
             }
             override fun onDmEnableChange(enabled: Boolean) { playerView.setDanmakuEnabled(enabled) }
+            override fun onPlaybackSpeedClick() { playerView.showPlaybackSpeedSettingView() }
         })
         playerView.onUserSeekListener = { positionMs ->
             viewModel.sponsorUserSeek(positionMs)
@@ -1292,6 +1293,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
                 douyinCoordinator.ensureQueueStarted()
                 schedulePreloadAndHeaderRefresh()
                 updatePrimaryActionVisibility()
+                applyMusicZoneDefaultSpeedIfNeeded(info)
                 checkTagsAndExitIfNeeded(info)
             }
         }
@@ -1404,6 +1406,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
         lifecycleScope.launch {
             viewModel.danmaku.collect {
                 updateDanmakuSwitchVisibility()
+                updatePlaySpeedButtonVisibility()
             }
         }
 
@@ -1746,6 +1749,25 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
         playerView.showHideDmSwitchButton(playerSettings.showDanmakuSwitch && hasDanmaku)
     }
 
+    /** 播放速度按键：设置开关打开即常驻显示在控制栏。 */
+    private fun updatePlaySpeedButtonVisibility() {
+        playerView.showHidePlaySpeedButton(playerSettings.showPlaySpeedButton)
+    }
+
+    private var lastVideoKeyForMusicSpeed: String? = null
+
+    /** 音乐区视频起播默认 1 倍速（仅在该开关打开且视频属于音乐区时生效，每个视频只应用一次）。 */
+    private fun applyMusicZoneDefaultSpeedIfNeeded(info: VideoDetailModel?) {
+        val view = info?.view ?: return
+        val key = "${view.bvid}:${view.cid}"
+        if (key == lastVideoKeyForMusicSpeed) return
+        lastVideoKeyForMusicSpeed = key
+        if (!::playerSettings.isInitialized || !playerSettings.musicZoneNormalSpeed) return
+        AppLog.d(TAG, "MusicZoneSpeed tid=${view.tid} isMusic=${PlayerScreenLogic.isMusicZone(view)}")
+        if (!PlayerScreenLogic.isMusicZone(view)) return
+        playerView.setPlaySpeed(1f)
+    }
+
     private fun updateEpisodeNavigationVisibility() {
         val episodes = sessionCoordinator.getEpisodes()
         val showNavigation = playerSettings.showNextPrevious && episodes.size > 1
@@ -1956,7 +1978,12 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
     private fun showVideoInfoDialog() { overlayUiController.showVideoInfoDialog() }
 
     private fun applyPlayerSettings(settings: PlayerSettings) {
-        playerView.setPlaySpeed(settings.defaultPlaybackSpeed)
+        // 音乐区视频默认 1 倍速：开关打开且当前是音乐区视频时，忽略配置的默认倍速
+        val musicZoneNormalSpeed = settings.musicZoneNormalSpeed &&
+            PlayerScreenLogic.isMusicZone(latestVideoInfo?.view)
+        playerView.setPlaySpeed(if (musicZoneNormalSpeed) 1f else settings.defaultPlaybackSpeed)
+        updatePlaySpeedButtonVisibility()
+        playerView.showPlaybackRateIndicator(settings.showPlaybackRate)
         playerView.setSeekSecond(settings.fastSeekSeconds)
         playerView.setSimpleKeyPressEnabled(settings.simpleKeyPress)
         playerView.setPersistentBottomProgressEnabled(settings.showBottomProgressBar)

@@ -33,7 +33,7 @@ class MyPlayerSettingView @JvmOverloads constructor(
 
     companion object {
         private const val SETTING_FOCUS_LOG_ENABLED = false
-        internal val PLAYBACK_SPEEDS = floatArrayOf(0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f)
+        internal val PLAYBACK_SPEEDS = floatArrayOf(0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 3.0f)
         internal val DM_ALPHA_VALUES = floatArrayOf(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1.0f)
         // 30-55 为历史档位；56-100 供超宽/低密度屏（如 5120×1600）放大使用
         internal val DM_TEXT_SIZE_VALUES = IntArray(71) { 30 + it }
@@ -165,7 +165,12 @@ class MyPlayerSettingView @JvmOverloads constructor(
             .setDuration(PANEL_ANIMATION_DURATION_MS)
             .setListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
-                    requestMenuFocus()
+                    // 面板入场动画结束才补聚焦主菜单第 1 行；但若期间已被切到子菜单
+                    // （如"播放速度"按键直接打开倍速菜单），此时不能再抢焦点，否则会把
+                    // 子菜单已定位好的焦点覆盖回第 1 行。
+                    if (adapter.currentMenuKey == ITEM_MAIN_MENU) {
+                        requestMenuFocus()
+                    }
                     onVisibilityStateChanged?.invoke(true)
                 }
             })
@@ -344,6 +349,16 @@ class MyPlayerSettingView @JvmOverloads constructor(
         }
     }
 
+    /** 播放页"播放速度"按键入口：直接打开倍速子菜单。 */
+    fun showPlaybackSpeedMenu() {
+        if (!isShowing()) {
+            showHide(true)
+            post { showPlaybackSpeedMenuInternal() }
+        } else {
+            showPlaybackSpeedMenuInternal()
+        }
+    }
+
     fun setLiveQualities(qualities: List<LiveQualityInfo>) {
         updateState { state ->
             val nextQn = if (state.currentLiveQualityQn == null ||
@@ -503,7 +518,7 @@ class MyPlayerSettingView @JvmOverloads constructor(
     private fun handleMainMenuClick(itemId: Int) {
         when (itemId) {
             ITEM_VIDEO_QUALITY -> showVideoQualityMenu()
-            ITEM_PLAYBACK_SPEED -> showPlaybackSpeedMenu()
+            ITEM_PLAYBACK_SPEED -> showPlaybackSpeedMenuInternal()
             ITEM_AFTER_PLAY -> showAfterPlayMenu()
             ITEM_SUBTITLE -> showSubtitles()
             ITEM_VIDEO_CODEC -> showVideoCodecMenu()
@@ -698,7 +713,7 @@ class MyPlayerSettingView @JvmOverloads constructor(
         showSubMenu(ITEM_VIDEO_QUALITY, menuBuilder.buildVideoQualityMenu(panelState), focusPosition = videoQualityFocusPosition())
     }
 
-    private fun showPlaybackSpeedMenu() {
+    private fun showPlaybackSpeedMenuInternal() {
         showSubMenu(ITEM_PLAYBACK_SPEED, menuBuilder.buildPlaybackSpeedMenu(panelState), focusPosition = playbackSpeedFocusPosition())
     }
 

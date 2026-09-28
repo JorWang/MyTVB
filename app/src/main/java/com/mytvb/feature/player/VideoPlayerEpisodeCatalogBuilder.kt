@@ -33,7 +33,10 @@ class VideoPlayerEpisodeCatalogBuilder(
         val ugcEpisodes = view.ugcSeason?.sections
             .orEmpty()
             .flatMap { it.episodes.orEmpty() }
-            .expandArchivePages()
+            .expandArchivePages(
+                currentArchiveTitle = view.title.takeIf { it.isNotBlank() },
+                currentBvid = view.bvid
+            )
 
         if (ugcEpisodes.isNotEmpty()) {
             return ugcEpisodes
@@ -145,13 +148,16 @@ class VideoPlayerEpisodeCatalogBuilder(
         )
     }
 
-    private fun List<UgcEpisode>.expandArchivePages(): List<VideoPlayerViewModel.PlayableEpisode> {
+    private fun List<UgcEpisode>.expandArchivePages(
+        currentArchiveTitle: String?,
+        currentBvid: String
+    ): List<VideoPlayerViewModel.PlayableEpisode> {
         if (isEmpty()) return emptyList()
         val archiveGroups = LinkedHashMap<String, MutableList<UgcEpisode>>()
         forEachIndexed { index, episode ->
             archiveGroups.getOrPut(episode.archiveKey(index)) { ArrayList() }.add(episode)
         }
-        return archiveGroups.values.flatMap { it.toPlayablePages() }
+        return archiveGroups.values.flatMap { it.toPlayablePages(currentArchiveTitle, currentBvid) }
     }
 
     private fun UgcEpisode.archiveKey(index: Int): String =
@@ -161,7 +167,14 @@ class VideoPlayerEpisodeCatalogBuilder(
             else -> "episode:$index"
         }
 
-    private fun List<UgcEpisode>.toPlayablePages(): List<VideoPlayerViewModel.PlayableEpisode> {
+    // 合集接口里的标题可能是投稿工具未替换的模板串（含 "{{title}}"、"{{yyyy}}" 等占位符），视为不可用。
+    private fun cleanArchiveTitle(raw: String?): String? =
+        raw?.takeIf { it.isNotBlank() && !it.contains("{{") }
+
+    private fun List<UgcEpisode>.toPlayablePages(
+        currentArchiveTitle: String?,
+        currentBvid: String
+    ): List<VideoPlayerViewModel.PlayableEpisode> {
         val representative = first()
         val pagesByKey = LinkedHashMap<String, VideoPvModel>()
         var fallbackPageIndex = 0
@@ -186,13 +199,14 @@ class VideoPlayerEpisodeCatalogBuilder(
             compareBy<VideoPvModel> { it.page.takeIf { page -> page > 0 } ?: Int.MAX_VALUE }
                 .thenBy { it.cid.takeIf { cid -> cid > 0L } ?: Long.MAX_VALUE }
         )
-        val archiveTitle = asSequence()
-            .mapNotNull { it.arc?.title?.takeIf(String::isNotBlank) }
-            .firstOrNull()
-            ?: asSequence().mapNotNull { it.title.takeIf(String::isNotBlank) }.firstOrNull()
-            ?: candidatePages.firstOrNull()?.part?.takeIf { it.isNotBlank() }
         val archiveAid = firstOrNull { it.displayAid > 0L }?.displayAid ?: 0L
         val archiveBvid = firstOrNull { it.displayBvid.isNotBlank() }?.displayBvid.orEmpty()
+        // 当前稿件优先用详情页 View.title 校正（恒为渲染后的成品标题），其余候选过滤占位符模板。
+        val archiveTitle = currentArchiveTitle
+            ?.takeIf { currentBvid.isNotBlank() && archiveBvid == currentBvid }
+            ?: asSequence().mapNotNull { it.arc?.title?.let(::cleanArchiveTitle) }.firstOrNull()
+            ?: asSequence().mapNotNull { cleanArchiveTitle(it.title) }.firstOrNull()
+            ?: candidatePages.firstOrNull()?.part?.let(::cleanArchiveTitle)
         val archiveCover = firstOrNull { it.displayCover.isNotBlank() }?.displayCover.orEmpty()
         val archiveCid = firstOrNull { it.displayCid > 0L }?.displayCid ?: representative.displayCid
         val archivePubDate = asSequence()
@@ -253,7 +267,7 @@ class VideoPlayerEpisodeCatalogBuilder(
                 pubDate = archivePubDate,
                 playCount = archivePlayCount,
                 danmakuCount = archiveDanmakuCount,
-                duration = archiveDuration,
+                duration = page.duration.takeIf { it > 0L } ?: archiveDuration,
                 source = VideoPlayerViewModel.EpisodeCatalogSource.UGC_SEASON
             )
         }

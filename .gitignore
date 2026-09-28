@@ -87,6 +87,7 @@ app/src/main/res/**/yt_*
 !app/src/main/res/layout/yt_overlay.xml
 !app/src/main/res/drawable-anydpi/exo_ic_speed.xml
 !app/src/main/res/drawable-anydpi/exo_ic_audiotrack.xml
+!app/src/main/res/drawable-anydpi-v21/exo_ic_speed.xml
 !app/src/main/res/drawable/exo_ic_speed.xml
 !app/src/main/res/drawable/exo_ic_audiotrack.xml
 !app/src/main/res/anim/m3_side_sheet_enter_from_right.xml

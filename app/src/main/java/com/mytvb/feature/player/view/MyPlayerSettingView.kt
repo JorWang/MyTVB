@@ -1046,8 +1046,13 @@ class MyPlayerSettingView @JvmOverloads constructor(
     }
 
     private fun requestMenuFocus(preferredPosition: Int = 1) {
+        // 面板未显示时不请求焦点：GONE 容器内的列表自身仍标记 VISIBLE，
+        // requestFocus() 只查自身可见性不查祖先，会把焦点从可见 UI 抢到隐形列表上。
+        if (!isShowing()) return
         logSettingFocus("requestMenuFocus preferred=$preferredPosition itemCount=${adapter.itemCount} menuKey=${adapter.currentMenuKey}")
         recyclerView.post {
+            // post 执行时面板可能已被关闭（关闭动画后 GONE），同样不请求焦点
+            if (!isShowing()) return@post
             val pos = preferredPosition.coerceIn(0, (adapter.itemCount - 1).coerceAtLeast(0))
             val targetView = recyclerView.findViewHolderForAdapterPosition(pos)?.itemView
                 ?: recyclerView.layoutManager?.findViewByPosition(pos)
@@ -1059,6 +1064,8 @@ class MyPlayerSettingView @JvmOverloads constructor(
                 // recyclerView.requestFocus() (which lets the system focus the first visible item).
                 recyclerView.scrollToPosition(pos)
                 recyclerView.post {
+                    // retry 执行时面板同样可能已关闭
+                    if (!isShowing()) return@post
                     val retryView = recyclerView.findViewHolderForAdapterPosition(pos)?.itemView
                         ?: recyclerView.layoutManager?.findViewByPosition(pos)
                     if (retryView?.isFocusable == true) {

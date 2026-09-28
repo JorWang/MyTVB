@@ -36,7 +36,7 @@
         android:paddingTop="@dimen/px5"
         android:paddingEnd="@dimen/px15"
         android:paddingBottom="@dimen/px5"
-        android:text="当前"
+        android:text="@string/adapter_current_selection"
         android:textColor="@color/colorAccent"
         android:textSize="@dimen/px22"
         android:textStyle="bold"

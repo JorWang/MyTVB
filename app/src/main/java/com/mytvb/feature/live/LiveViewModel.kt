@@ -1,7 +1,9 @@
 package com.mytvb.feature.live
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mytvb.R
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.model.live.LiveAreaCategoryParent
 import com.mytvb.repository.LiveRepository
@@ -11,7 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class LiveViewModel(
-    private val liveRepository: LiveRepository
+    private val liveRepository: LiveRepository,
+    private val appContext: Context
 ) : ViewModel() {
 
     private var lastLoadedAt = 0L
@@ -43,7 +46,7 @@ class LiveViewModel(
                     AppLog.d("LivePerf", "loadLiveAreas: 分区数量=${areaList.size}")
                     val recommendCategory = LiveAreaCategoryParent(
                         id = 0,
-                        name = "推荐"
+                        name = appContext.getString(R.string.recommend)
                     )
                     _categories.value = listOf(recommendCategory) + areaList
                     lastLoadedAt = System.currentTimeMillis()

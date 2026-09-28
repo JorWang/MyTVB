@@ -238,58 +238,59 @@ class SeriesDetailContentAdapter(
         }
 
         private fun buildSubtitle(detail: EpisodesDetailModel): String {
+            val context = binding.root.context
             return buildList {
                 buildStatusInfo(detail)?.let { add(it) }
                 detail.rating?.score
                     ?.takeIf { it > 0 }
-                    ?.let { add("评分 $it") }
+                    ?.let { add(context.getString(R.string.adapter_rating_format, it)) }
                 detail.stat?.favorites
                     ?.takeIf { it > 0 }
                     ?.let {
-                        val label = if (detail.type == 1) "追番" else "追剧"
-                        add("${NumberUtils.formatCount(it)} $label")
+                        val labelRes = if (detail.type == 1) R.string.follow_animation else R.string.follow_series
+                        add(context.getString(R.string.adapter_chase_count_format, NumberUtils.formatCount(context, it), context.getString(labelRes)))
                     }
                 detail.stat?.view
                     ?.takeIf { it > 0 }
-                    ?.let { add("${NumberUtils.formatCount(it)} 播放") }
+                    ?.let { add(context.getString(R.string.adapter_play_count_format, NumberUtils.formatCount(context, it))) }
                 detail.stat?.danmaku
                     ?.takeIf { it > 0 }
-                    ?.let { add("${NumberUtils.formatCount(it)} 弹幕") }
+                    ?.let { add(context.getString(R.string.adapter_danmaku_count_format, NumberUtils.formatCount(context, it))) }
             }.joinToString(" | ")
         }
 
         private fun buildStatusInfo(detail: EpisodesDetailModel): String? {
             detail.newEp?.desc?.takeIf { it.isNotBlank() }?.let { return it }
             detail.newEp?.indexShow?.takeIf { it.isNotBlank() }?.let { return it }
+            val context = binding.root.context
+            val unit = context.getString(if (detail.type == 1) R.string.adapter_episode_unit_anime else R.string.adapter_episode_unit_drama)
             val publish = detail.publish
             if (publish != null) {
-                val unit = if (detail.type == 1) "话" else "集"
                 val statusText = if (publish.isFinish == 1) {
-                    "已完结，全${detail.total}${unit}"
+                    context.getString(R.string.adapter_series_finished_total_format, detail.total, unit)
                 } else {
                     val timeShow = publish.pubTimeShow.takeIf { it.isNotBlank() }
                         ?: publish.releaseDateShow.takeIf { it.isNotBlank() }
                     if (!timeShow.isNullOrBlank()) {
-                        "连载中，$timeShow"
+                        context.getString(R.string.adapter_series_ongoing_format, timeShow)
                     } else {
                         val episodeCount = detail.episodes?.size ?: 0
-                        "连载中，更新至第${episodeCount}${unit}"
+                        context.getString(R.string.adapter_series_ongoing_updated_format, episodeCount, unit)
                     }
                 }
                 return statusText
             }
             val total = detail.total
             val episodeCount = detail.episodes?.size ?: 0
-            val unit = if (detail.type == 1) "话" else "集"
             if (total > 0) {
                 return if (episodeCount >= total) {
-                    "已完结，全${total}${unit}"
+                    context.getString(R.string.adapter_series_finished_total_format, total, unit)
                 } else {
-                    "连载中，更新至第${episodeCount}${unit}"
+                    context.getString(R.string.adapter_series_ongoing_updated_format, episodeCount, unit)
                 }
             }
             if (episodeCount > 0) {
-                return "更新至第${episodeCount}${unit}"
+                return context.getString(R.string.adapter_series_updated_format, episodeCount, unit)
             }
             return null
         }
@@ -451,7 +452,11 @@ class SeriesDetailContentAdapter(
         }
 
         fun bind(title: String, items: List<SeriesModel>) {
-            binding.topTitle.text = title
+            binding.topTitle.text = if (title.isBlank()) {
+                binding.root.context.getString(R.string.adapter_related_series)
+            } else {
+                binding.root.context.getString(R.string.adapter_related_series_format, title)
+            }
             adapter.setData(items)
         }
 
@@ -691,7 +696,7 @@ class SeriesDetailContentAdapter(
                 ?.let { seasons ->
                     add(
                         Row.Seasons(
-                            title = detail.resolveSeasonRowTitle(),
+                            title = detail.title.ifBlank { detail.seasonTitle },
                             items = seasons
                         )
                     )
@@ -703,15 +708,6 @@ class SeriesDetailContentAdapter(
         }
     }
 
-}
-
-private fun EpisodesDetailModel.resolveSeasonRowTitle(): String {
-    val seriesTitle = title.ifBlank { seasonTitle }
-    return if (seriesTitle.isBlank()) {
-        "相关系列"
-    } else {
-        java.lang.String.format("%s 相关系列", seriesTitle)
-    }
 }
 
 private fun SectionModel.resolveDisplayTitle(view: View): String {

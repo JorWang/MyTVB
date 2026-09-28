@@ -83,7 +83,6 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 
-private const val RISK_CONTROL_USER_HINT = "账号被风控了，请到设置中完成验证"
 private val riskControlUserHintShown = AtomicBoolean(false)
 
 @UnstableApi
@@ -534,7 +533,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
                         AppLog.i(TAG, "preview playback ended, show controller instead of autoplay")
                         Toast.makeText(
                             applicationContext,
-                            "试看片段已结束，完整观看本集需要大会员或登录",
+                            R.string.activity_preview_ended_hint,
                             Toast.LENGTH_LONG
                         ).show()
                         playerView.showController()
@@ -806,7 +805,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
         )
         relatedAdapter.setOnItemClickListener { _, item ->
             if (isVideoBlockedByMinorProtection(item)) {
-                toast("青少年模式已拦截该视频")
+                toast(getString(R.string.activity_teen_mode_blocked_video))
             } else {
                 playerView.hideController()
                 hideContentPanel()
@@ -846,7 +845,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
             textMoreTitle = textMoreTitle,
             onPlayEpisode = { index ->
                 if (!sessionCoordinator.canPlayEpisode(index)) {
-                    toast("青少年模式已拦截该视频")
+                    toast(getString(R.string.activity_teen_mode_blocked_video))
                 } else {
                     playerView.hideController()
                     viewModel.playEpisode(index)
@@ -854,7 +853,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
             },
             onPlayRelatedVideo = { video, playQueue ->
                 if (isVideoBlockedByMinorProtection(video)) {
-                    toast("青少年模式已拦截该视频")
+                    toast(getString(R.string.activity_teen_mode_blocked_video))
                 } else {
                     playerView.hideController()
                     sessionCoordinator.replacePlayQueue(playQueue)
@@ -883,6 +882,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
             playerView = playerView,
             viewModel = viewModel,
             lifecycleScope = lifecycleScope,
+            context = this,
             host = object : DouyinPlaybackCoordinator.Host {
                 override fun toast(message: String) = this@PlayerActivity.toast(message)
                 override fun isVideoBlockedByMinorProtection(video: VideoModel) =
@@ -1076,7 +1076,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
                     Player.REPEAT_MODE_ONE
                 }
                 playerView.setRepeatMode(currentPlayer.repeatMode)
-                Toast.makeText(applicationContext, if (currentPlayer.repeatMode == Player.REPEAT_MODE_ONE) "单集循环" else "顺序播放", Toast.LENGTH_SHORT).show()
+                Toast.makeText(applicationContext, if (currentPlayer.repeatMode == Player.REPEAT_MODE_ONE) R.string.activity_repeat_one else R.string.activity_repeat_all, Toast.LENGTH_SHORT).show()
             }
             override fun onDmEnableChange(enabled: Boolean) { playerView.setDanmakuEnabled(enabled) }
             override fun onPlaybackSpeedClick() { playerView.showPlaybackSpeedSettingView() }
@@ -1113,7 +1113,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
                             finish()
                         } else {
                             exitTime = System.currentTimeMillis()
-                            Toast.makeText(applicationContext, "再按一次退出播放", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(applicationContext, R.string.activity_exit_player_hint, Toast.LENGTH_SHORT).show()
                         }
                     },
                 )
@@ -1280,7 +1280,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
             viewModel.riskControlTryLookBypass.collect { bypassed ->
                 if (!bypassed) return@collect
                 if (riskControlUserHintShown.compareAndSet(false, true)) {
-                    Toast.makeText(applicationContext, RISK_CONTROL_USER_HINT, Toast.LENGTH_LONG).show()
+                    Toast.makeText(applicationContext, R.string.activity_risk_control_settings_hint, Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -1328,7 +1328,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
                 if (resting) {
                     val restMin = com.mytvb.core.common.content.TeenModeTimer.getRestLimitMin()
                         .coerceAtLeast(1)
-                    toast("请关闭电视注意休息，还需休息 $restMin 分钟")
+                    toast(getString(R.string.activity_teen_rest_needed_format, restMin))
                     finish()
                 }
             }
@@ -1486,7 +1486,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
                     is VideoPlayerViewModel.SponsorSkipUiState.Hidden -> {}
                     is VideoPlayerViewModel.SponsorSkipUiState.ShowButton -> {}
                     is VideoPlayerViewModel.SponsorSkipUiState.AutoSkipped -> {
-                        toast("已跳过: ${state.segment.categoryName()}")
+                        toast(getString(R.string.activity_sponsor_skipped_format, state.segment.categoryName()))
                         player?.seekTo(state.segment.endTimeMs)
                     }
                 }
@@ -1781,12 +1781,13 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
         val video = latestVideoInfo?.view ?: return
         val selectedEpisode = sessionCoordinator.getSelectedEpisode()
         playerView.setTitle(PlayerScreenLogic.buildHeaderTitle(video.title, selectedEpisode))
-        playerView.setSubTitle(PlayerScreenLogic.buildHeaderMetaParts(video).joinToString(" · "))
+        playerView.setSubTitle(PlayerScreenLogic.buildHeaderMetaParts(this, video).joinToString(" · "))
     }
 
 
     private fun renderDebugState() {
         val text = PlayerScreenLogic.debugOverlayText(
+            context = this,
             showDebugInfo = ::playerSettings.isInitialized && playerSettings.showDebugInfo,
             errorMessage = latestErrorMessage,
             player = player,
@@ -1802,7 +1803,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
     }
 
     private fun buildDebugInfo(p: ExoPlayer): String {
-        return PlayerScreenLogic.buildDebugInfo(p)
+        return PlayerScreenLogic.buildDebugInfo(this, p)
     }
     private fun syncPlaybackEnvironment() {
         if (suppressPlaybackEnvironmentSync) {
@@ -1961,7 +1962,7 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
         previewHintShownCid = cid
         Toast.makeText(
             applicationContext,
-            "本集为试看片段（约1分钟），完整观看需要大会员或登录",
+            R.string.activity_preview_start_hint,
             Toast.LENGTH_LONG
         ).show()
     }

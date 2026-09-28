@@ -76,7 +76,8 @@ class CctvChannelAdapter(
         fun bind(channel: CctvChannel) {
             views.textLayer.setTitle(channel.title, lines = 1)
             views.textLayer.setOwner(
-                ownerText = nowPrograms[channel.id]?.takeIf { it.isNotBlank() } ?: channel.description,
+                ownerText = nowPrograms[channel.id]?.takeIf { it.isNotBlank() }
+                    ?: channel.description.ifBlank { views.root.context.getString(R.string.cctv_official_live_desc) },
                 showAvatar = false,
                 show = true
             )

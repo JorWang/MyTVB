@@ -1,5 +1,8 @@
 package com.mytvb.model.series
 
+import androidx.annotation.StringRes
+import com.mytvb.R
+
 object SeriesType {
     const val ANIME = 1
     const val MOVIE = 2
@@ -17,6 +20,20 @@ object SeriesType {
             DRAMA -> "电视剧"
             DOCUMENTARY -> "纪录片"
             else -> "番剧"
+        }
+    }
+
+    /** 标题显示名的字符串资源（供 UI 层配合 context.getString 做多语言展示）。 */
+    @StringRes
+    fun titleResOf(type: Int): Int {
+        return when (type) {
+            ANIME -> R.string.animation
+            CHINA_ANIME -> R.string.model_series_china_anime
+            MOVIE -> R.string.movie
+            VARIETY -> R.string.model_series_variety
+            DRAMA -> R.string.series
+            DOCUMENTARY -> R.string.documentary
+            else -> R.string.animation
         }
     }
 }

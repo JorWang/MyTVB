@@ -1,14 +1,17 @@
 package com.mytvb.core.common.format
 
+import android.content.Context
+import com.mytvb.R
 import java.text.DecimalFormat
 import java.util.Locale
 
 object NumberUtils {
-    
+
     private val wanFormat = DecimalFormat("#.#万")
     private val yiFormat = DecimalFormat("#.#亿")
+    private val plainDecimalFormat = DecimalFormat("#.#")
     private val commaFormat = DecimalFormat("#,###")
-    
+
     fun formatCount(count: Long): String {
         return when {
             count >= 100000000 -> {
@@ -22,7 +25,46 @@ object NumberUtils {
             }
         }
     }
-    
+
+    /** 多语言版本的 [formatCount]：中文万/亿分级，英文等千分位语言 K/M/B 分级（资源开关驱动）。 */
+    fun formatCount(context: Context, count: Long): String {
+        return if (context.resources.getBoolean(R.bool.count_scale_thousand)) {
+            when {
+                count >= 1_000_000_000L -> context.getString(
+                    R.string.core_count_b_format,
+                    plainDecimalFormat.format(count / 1_000_000_000.0)
+                )
+                count >= 1_000_000L -> context.getString(
+                    R.string.core_count_m_format,
+                    plainDecimalFormat.format(count / 1_000_000.0)
+                )
+                count >= 1_000L -> context.getString(
+                    R.string.core_count_k_format,
+                    plainDecimalFormat.format(count / 1_000.0)
+                )
+                else -> commaFormat.format(count)
+            }
+        } else {
+            when {
+                count >= 100000000 -> {
+                    context.getString(
+                        R.string.core_count_yi_format,
+                        plainDecimalFormat.format(count / 100000000.0)
+                    )
+                }
+                count >= 10000 -> {
+                    context.getString(
+                        R.string.core_count_wan_format,
+                        plainDecimalFormat.format(count / 10000.0)
+                    )
+                }
+                else -> {
+                    commaFormat.format(count)
+                }
+            }
+        }
+    }
+
     fun formatDuration(seconds: Long): String {
         val hours = seconds / 3600
         val minutes = (seconds % 3600) / 60

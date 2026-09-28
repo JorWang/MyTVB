@@ -1,6 +1,7 @@
 package com.mytvb.feature.search
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Outline
 import android.os.Handler
 import android.os.Looper
@@ -184,7 +185,7 @@ class SearchItemAdapter(
             currentItem = item
             views.textLayer.setTitle(item.decodedTitle, lines = 2)
             val ownerName = item.author.ifBlank { item.uname }
-            val publishText = item.pubDate.takeIf { it > 0L }?.let(TimeUtils::formatRelativeTime).orEmpty()
+            val publishText = item.pubDate.takeIf { it > 0L }?.let { TimeUtils.formatRelativeTime(views.root.context, it) }.orEmpty()
             val ownerLine = buildString {
                 if (ownerName.isNotBlank()) {
                     append(ownerName)
@@ -206,7 +207,7 @@ class SearchItemAdapter(
                 views.textLayer.setOwner(
                     ownerText = ownerLine,
                     showAvatar = false,
-                    badgeText = "竖屏"
+                    badgeText = views.root.context.getString(R.string.badge_portrait)
                 )
             } else {
                 views.textLayer.setOwner(
@@ -238,7 +239,7 @@ class SearchItemAdapter(
                         views.textLayer.setOwner(
                             ownerText = ownerLine,
                             showAvatar = false,
-                            badgeText = "竖屏"
+                            badgeText = views.root.context.getString(R.string.badge_portrait)
                         )
                     }
                 } else null
@@ -315,7 +316,7 @@ class SearchItemAdapter(
             binding.textView.text = item.uname
             binding.textLevel.visibility = if (item.level > 0) View.VISIBLE else View.INVISIBLE
             binding.textLevel.text = "LV${item.level}"
-            binding.textMeta.text = buildUserMetaText(item)
+            binding.textMeta.text = buildUserMetaText(binding.root.context, item)
             binding.textSub.text = item.usign.ifBlank { item.desc }
 
             ImageLoader.loadCircle(
@@ -330,15 +331,15 @@ class SearchItemAdapter(
         }
     }
 
-    private fun buildUserMetaText(item: SearchItemModel): String {
+    private fun buildUserMetaText(context: Context, item: SearchItemModel): String {
         val parts = mutableListOf<String>()
         if (item.fans > 0L) {
-            parts.add("${NumberUtils.formatCount(item.fans)}粉丝")
+            parts.add(context.getString(R.string.search_fans_format, NumberUtils.formatCount(item.fans)))
         }
         if (item.videos > 0L) {
-            parts.add("${NumberUtils.formatCount(item.videos)}个视频")
+            parts.add(context.getString(R.string.search_video_count_format, NumberUtils.formatCount(item.videos)))
         }
-        return parts.joinToString(" · ").ifBlank { "0粉丝 · 0个视频" }
+        return parts.joinToString(" · ").ifBlank { context.getString(R.string.search_user_meta_empty) }
     }
 
     private fun RecyclerView.ViewHolder.bindInteraction(

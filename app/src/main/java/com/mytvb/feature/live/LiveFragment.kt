@@ -63,7 +63,7 @@ class LiveFragment : BaseFragment<FragmentLiveBinding>(), MainTabFocusTarget {
         viewPager.disableAdjacentPagePrefetch()
 
         // 立即展示"推荐"tab，不等分区列表返回
-        val recommendCategory = LiveAreaCategoryParent(id = 0, name = "推荐")
+        val recommendCategory = LiveAreaCategoryParent(id = 0, name = getString(R.string.recommend))
         categories.clear()
         categories.add(recommendCategory)
         adapter.setCategories(categories)

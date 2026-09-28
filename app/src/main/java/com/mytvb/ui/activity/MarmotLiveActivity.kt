@@ -1,5 +1,6 @@
 package com.mytvb.ui.activity
 
+import com.mytvb.R
 import com.mytvb.core.common.json.GsonHolder
 import android.annotation.SuppressLint
 import android.content.Context
@@ -64,7 +65,7 @@ class MarmotLiveActivity : BaseActivity<ActivityMarmotLiveBinding>() {
         /** 启动入口。 */
         fun start(context: Context) {
             // 青少年模式：休息期间拦截 TV 直播入口
-            com.mytvb.core.common.content.TeenModeTimer.consumeBlockReason()?.let {
+            com.mytvb.core.common.content.TeenModeTimer.consumeBlockReason(context)?.let {
                 context.toast(it)
                 return
             }
@@ -93,7 +94,7 @@ class MarmotLiveActivity : BaseActivity<ActivityMarmotLiveBinding>() {
             com.mytvb.core.common.content.TeenModeTimer.tick()
             if (com.mytvb.core.common.content.TeenModeTimer.isResting()) {
                 val restMin = com.mytvb.core.common.content.TeenModeTimer.getRestLimitMin().coerceAtLeast(1)
-                android.widget.Toast.makeText(this@MarmotLiveActivity, "请关闭电视注意休息，还需休息 $restMin 分钟", android.widget.Toast.LENGTH_SHORT).show()
+                android.widget.Toast.makeText(this@MarmotLiveActivity, getString(R.string.activity_teen_rest_needed_format, restMin), android.widget.Toast.LENGTH_SHORT).show()
                 finish()
                 return
             }
@@ -265,7 +266,7 @@ class MarmotLiveActivity : BaseActivity<ActivityMarmotLiveBinding>() {
             AppLog.i(TAG, "initData: 频道表加载结果=$loaded")
             if (!loaded) {
                 AppLog.e(TAG, "initData: 频道数据加载失败，请检查网络/明文流量权限/filesDir 是否损坏")
-                Toast.makeText(this@MarmotLiveActivity, "频道数据加载失败", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MarmotLiveActivity, R.string.activity_channel_load_failed, Toast.LENGTH_SHORT).show()
                 return@launch
             }
             provinces.clear()
@@ -294,7 +295,7 @@ class MarmotLiveActivity : BaseActivity<ActivityMarmotLiveBinding>() {
             AppLog.i(TAG, "initData: CCTV 频道过滤后 ${provinces.size} 个分组，" +
                 "${provinces.sumOf { it.vods.size }} 个频道")
             if (provinces.isEmpty()) {
-                Toast.makeText(this@MarmotLiveActivity, "无 CCTV 频道数据", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MarmotLiveActivity, R.string.activity_no_cctv_channels, Toast.LENGTH_SHORT).show()
                 return@launch
             }
             // 3. 恢复上次观看频道：优先按保存的 URL 反查（必须是 CCTV 频道），否则回退首个 CCTV 频道
@@ -306,11 +307,11 @@ class MarmotLiveActivity : BaseActivity<ActivityMarmotLiveBinding>() {
                 provinces.first().vods.first()
             }
             if (currentVod == null) {
-                Toast.makeText(this@MarmotLiveActivity, "无频道数据", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MarmotLiveActivity, R.string.activity_no_channels, Toast.LENGTH_SHORT).show()
                 return@launch
             }
             playCurrent()
-            Toast.makeText(this@MarmotLiveActivity, "已支持遥控器上下左右可快速切台", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this@MarmotLiveActivity, R.string.activity_remote_switch_channel_tip, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -442,7 +443,7 @@ $scriptTags
         }
         // 显示加载进度转圈与状态文字提示（位于遮罩之上）
         binding.progressBar.visibility = View.VISIBLE
-        updateVideoCoverText("正在初始化…")
+        updateVideoCoverText(getString(R.string.activity_initializing))
         // 定时兜底：防止某些源视频迟迟不出导致遮罩一直黑屏
         mainHandler.postDelayed(hideVideoCoverRunnable, videoCoverTimeoutMs)
         // 遮罩绘制上屏后再执行 afterShown（loadUrl），确保网页全程在遮罩背后渲染
@@ -510,13 +511,13 @@ $scriptTags
                     time < 0 -> {
                         videoCoverPlayingCount = 0
                         videoCoverLastTime = 0.0
-                        updateVideoCoverText("正在加载网页…")
+                        updateVideoCoverText(getString(R.string.activity_loading_web))
                     }
                     // 已创建 <video> 但尚未真正播放（currentTime 未前进）
                     time == 0.0 || time <= videoCoverLastTime -> {
                         videoCoverPlayingCount = 0
                         videoCoverLastTime = time
-                        updateVideoCoverText("正在加载视频…")
+                        updateVideoCoverText(getString(R.string.activity_loading_video))
                     }
                     // 时间轴在增长，确认真正在播放；连续多次才移除遮罩，避免骨架/静止 video 误判
                     else -> {
@@ -570,7 +571,7 @@ $scriptTags
     /** 显示频道列表浮层（双排）。 */
     private fun showChannelMenu() {
         if (provinces.isEmpty()) {
-            Toast.makeText(this, "频道数据加载中...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.activity_channel_loading, Toast.LENGTH_SHORT).show()
             return
         }
         isChannelMenuShowing = true
@@ -626,7 +627,7 @@ $scriptTags
         val items = provider.availableQualities()
         AppLog.i(TAG, "showQualityMenu: provider=${provider.javaClass.simpleName} 画质 ${items.size} 项")
         if (items.isEmpty()) {
-            Toast.makeText(this, "当前频道暂无画质选项", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.activity_no_quality_options, Toast.LENGTH_SHORT).show()
             return
         }
         val currentIdx = provider.currentQualityIndex(items)
@@ -815,7 +816,7 @@ $scriptTags
                     finish()
                 } else {
                     exitTime = System.currentTimeMillis()
-                    Toast.makeText(this, "再按一次退出直播", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, R.string.activity_exit_live_hint, Toast.LENGTH_SHORT).show()
                 }
                 return true
             }

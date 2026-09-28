@@ -101,13 +101,13 @@ val viewModelModule = module {
     viewModel { VideoPlayerViewModel(get(), get(), get(), get(), get(), get(), get(named("noCookie")), get(), androidContext(), get()) }
     viewModel { CategoryViewModel(get()) }
     viewModel { DynamicViewModel(get()) }
-    viewModel { LiveViewModel(get()) }
+    viewModel { LiveViewModel(get(), androidContext()) }
     viewModel { LiveListViewModel(get()) }
     viewModel { LiveRecommendViewModel(get()) }
     viewModel { MeListViewModel(get(), get()) }
     viewModel { MeViewModel(get(), get()) }
     viewModel { SearchViewModel(get()) }
-    viewModel { LivePlayerViewModel(get(), LiveDanmakuManager(get(), get(), get())) }
+    viewModel { LivePlayerViewModel(get(), LiveDanmakuManager(get(), get(), get()), androidContext()) }
     viewModel { SeriesDetailViewModel(get(), get()) }
 }
 

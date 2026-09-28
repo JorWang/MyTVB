@@ -252,7 +252,11 @@ class UserSpaceFragment : BaseFragment<FragmentUserSpaceBinding>(), com.mytvb.ui
                 }
             } catch (e: Exception) {
                 binding.progressBar.visibility = View.GONE
-                Toast.makeText(requireContext(), "加载失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.load_failed_format, e.message),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -304,7 +308,11 @@ class UserSpaceFragment : BaseFragment<FragmentUserSpaceBinding>(), com.mytvb.ui
                 swipeRefreshLayout?.isRefreshing = false
                 isLoading = false
                 rollbackPage()
-                Toast.makeText(requireContext(), "加载失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.load_failed_format, e.message),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -420,14 +428,19 @@ class UserSpaceFragment : BaseFragment<FragmentUserSpaceBinding>(), com.mytvb.ui
                     loadUserStat()
                     Toast.makeText(
                         requireContext(),
-                        if (action == 1) "关注成功" else "已取消关注",
+                        if (action == 1) getString(R.string.toast_follow_success)
+                        else getString(R.string.toast_cancel_follow_success),
                         Toast.LENGTH_SHORT
                     ).show()
                 } else {
                     Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT).show()
                 }
             }.onFailure { e ->
-                Toast.makeText(requireContext(), "操作失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.toast_operation_failed_format, e.message),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

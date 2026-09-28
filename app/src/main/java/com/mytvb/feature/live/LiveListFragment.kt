@@ -143,7 +143,7 @@ class LiveListFragment : BaseFragment<FragmentLiveListBinding>(), LiveTabPage {
             binding.recyclerView.visibility = View.GONE
             binding.progressBar.visibility = View.GONE
             binding.tvEmpty.text = getString(R.string.need_sign_in)
-            binding.btnRetry.text = "登录"
+            binding.btnRetry.text = getString(R.string.live_login)
             binding.btnRetry.setOnClickListener {
                 openInHostContainer(SignInFragment.newInstance())
             }
@@ -178,7 +178,7 @@ class LiveListFragment : BaseFragment<FragmentLiveListBinding>(), LiveTabPage {
             binding.recyclerView.visibility = View.GONE
             binding.progressBar.visibility = View.GONE
             binding.tvEmpty.text = getString(R.string.need_sign_in)
-            binding.btnRetry.text = "登录"
+            binding.btnRetry.text = getString(R.string.live_login)
             binding.btnRetry.setOnClickListener {
                 openInHostContainer(SignInFragment.newInstance())
             }

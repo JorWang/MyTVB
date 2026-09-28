@@ -2,6 +2,8 @@ package com.mytvb.feature.me
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mytvb.MyBLBLApplication
+import com.mytvb.R
 import com.mytvb.model.video.HistoryVideoModel
 import com.mytvb.model.video.VideoModel
 import com.mytvb.repository.UserRepository
@@ -78,7 +80,7 @@ class MeListViewModel(
                 lastHistoryPayloadSignature = ""
                 _uiState.value = _uiState.value.copy(historyVideos = emptyList())
                 _hasMore.value = false
-                _error.value = "该功能需要登录后才可以使用"
+                _error.value = MyBLBLApplication.instance.getString(R.string.need_sign_in)
                 finishRequest(requestId)
                 return@launch
             }
@@ -159,7 +161,7 @@ class MeListViewModel(
                 lastLaterPayloadSignature = ""
                 _uiState.value = _uiState.value.copy(laterVideos = emptyList())
                 _hasMore.value = false
-                _error.value = "该功能需要登录后才可以使用"
+                _error.value = MyBLBLApplication.instance.getString(R.string.need_sign_in)
                 finishRequest(requestId)
                 return@launch
             }

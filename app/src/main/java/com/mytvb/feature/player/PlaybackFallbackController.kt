@@ -2,8 +2,10 @@
 
 package com.mytvb.feature.player
 
+import android.content.Context
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
+import com.mytvb.R
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.model.player.PlayInfoModel
 import com.mytvb.model.video.quality.VideoCodecEnum
@@ -43,6 +45,7 @@ internal class PlaybackFallbackController(
     private val qualityPolicy: VideoPlayerQualityPolicy,
     private val playInfoGateway: VideoPlayerPlayInfoGateway,
     private val scope: CoroutineScope,
+    private val appContext: Context,
     private val context: FallbackContext
 ) {
 
@@ -142,7 +145,7 @@ internal class PlaybackFallbackController(
         val hasDashFallback = dashSession?.routePlan?.routes?.isNotEmpty() == true && context.useDashPlayback
         val hasProgressiveFallback = streamPlan?.routes?.isNotEmpty() == true
         if (!hasDashFallback && !hasProgressiveFallback) {
-            context.reportError(error.message ?: "加载失败")
+            context.reportError(error.message ?: appContext.getString(R.string.player_load_failed))
             return
         }
 
@@ -175,7 +178,7 @@ internal class PlaybackFallbackController(
                 ?: streamPlan?.qualityId
                 ?: 0
             AppLog.e(TAG, "fallback exhausted: qualityLocked=$qualityLocked, isDash=$isDash, attempts=$fallbackAttemptCount")
-            context.reportError("当前清晰度下所有线路与编码器都不可用")
+            context.reportError(appContext.getString(R.string.player_error_all_routes_unavailable))
         }
     }
 
@@ -377,7 +380,7 @@ internal class PlaybackFallbackController(
                 return@launch
             }
             if (!trySwitchCodec(lastPlaybackPositionMs, reason = "refresh_failed")) {
-                context.reportError("当前清晰度下播放失败，请稍后重试")
+                context.reportError(appContext.getString(R.string.player_error_playback_failed_retry_later))
             }
         }
         return true

@@ -1,5 +1,7 @@
 package com.mytvb.repository.remote
 
+import com.mytvb.R
+import com.mytvb.MyBLBLApplication
 import com.mytvb.model.series.CheckUserSeriesResult
 import com.mytvb.model.series.EpisodesDetailModel
 import com.mytvb.model.series.FollowSeriesResult
@@ -75,7 +77,7 @@ class SeriesRepository(
             if (response.isSuccess && result != null) {
                 result
             } else {
-                throw IllegalStateException(response.errorMessage.ifBlank { "获取追番状态失败" })
+                throw IllegalStateException(response.errorMessage.ifBlank { MyBLBLApplication.instance.getString(R.string.series_error_follow_status_failed) })
             }
         }
     }
@@ -103,7 +105,7 @@ class SeriesRepository(
                     toast = ""
                 )
             } else {
-                throw IllegalStateException(finalResponse.errorMessage.ifBlank { "追番失败" })
+                throw IllegalStateException(finalResponse.errorMessage.ifBlank { MyBLBLApplication.instance.getString(R.string.series_error_follow_failed) })
             }
         }
     }
@@ -131,7 +133,7 @@ class SeriesRepository(
                     toast = ""
                 )
             } else {
-                throw IllegalStateException(finalResponse.errorMessage.ifBlank { "取消追番失败" })
+                throw IllegalStateException(finalResponse.errorMessage.ifBlank { MyBLBLApplication.instance.getString(R.string.series_error_unfollow_failed) })
             }
         }
     }
@@ -185,7 +187,7 @@ class SeriesRepository(
                     )
                 }
             } else {
-                throw IllegalStateException(response.message.ifEmpty { "时间线加载失败" })
+                throw IllegalStateException(response.message.ifEmpty { MyBLBLApplication.instance.getString(R.string.series_error_timeline_failed) })
             }
         }
     }
@@ -196,7 +198,7 @@ class SeriesRepository(
             if (response.isSuccess && response.data != null) {
                 response.data
             } else {
-                throw IllegalStateException(response.errorMessage.ifEmpty { "推荐加载失败" })
+                throw IllegalStateException(response.errorMessage.ifEmpty { MyBLBLApplication.instance.getString(R.string.series_error_recommend_failed) })
             }
         }
     }

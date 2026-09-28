@@ -296,7 +296,7 @@ class FavoriteDetailFragment : BaseFragment<FragmentFavoriteDetailBinding>() {
                 }
             }.onFailure { e ->
                 rollbackPage()
-                handleLoadError("加载失败: ${e.message}")
+                handleLoadError(getString(R.string.load_failed_format, e.message))
             }
         }
     }

@@ -124,7 +124,7 @@ class UserInfoDialog(context: Context) : AppCompatDialog(context, R.style.Dialog
         binding.textVip.text = info?.vipLabel?.text
             .orEmpty()
             .ifBlank { info?.vip?.label?.text.orEmpty() }
-            .ifBlank { "普通会员" }
+            .ifBlank { context.getString(R.string.dialog_normal_member) }
         binding.textLevel.text = context.getString(
             R.string.level_,
             info?.levelInfo?.currentLevel ?: 0
@@ -136,9 +136,9 @@ class UserInfoDialog(context: Context) : AppCompatDialog(context, R.style.Dialog
     }
 
     private fun bindUserStat(stat: UserStatModel?) {
-        binding.textFollowing.text = NumberUtils.formatCount((stat?.following ?: 0).toLong())
-        binding.textFollower.text = NumberUtils.formatCount((stat?.follower ?: 0).toLong())
-        binding.textDynamic.text = NumberUtils.formatCount((stat?.dynamicCount ?: 0).toLong())
+        binding.textFollowing.text = NumberUtils.formatCount(context, (stat?.following ?: 0).toLong())
+        binding.textFollower.text = NumberUtils.formatCount(context, (stat?.follower ?: 0).toLong())
+        binding.textDynamic.text = NumberUtils.formatCount(context, (stat?.dynamicCount ?: 0).toLong())
     }
 
     private fun openOverlay(fragment: Fragment, tag: String) {

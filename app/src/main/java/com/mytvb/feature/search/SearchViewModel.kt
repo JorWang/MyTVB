@@ -2,6 +2,8 @@ package com.mytvb.feature.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mytvb.MyBLBLApplication
+import com.mytvb.R
 import com.mytvb.model.search.HotWordModel
 import com.mytvb.model.search.SearchAllCountWrapper
 import com.mytvb.model.search.SearchAllResponseData
@@ -243,13 +245,14 @@ class SearchViewModel(
     }
 
     private fun resolveTitle(type: SearchType): String {
-        return when (type) {
-            SearchType.Video -> "视频"
-            SearchType.Animation -> "番剧"
-            SearchType.FilmAndTv -> "影视"
-            SearchType.LiveRoom -> "直播"
-            SearchType.User -> "用户"
+        val resId = when (type) {
+            SearchType.Video -> R.string.video
+            SearchType.Animation -> R.string.animation
+            SearchType.FilmAndTv -> R.string.film_and_television
+            SearchType.LiveRoom -> R.string.live
+            SearchType.User -> R.string.user
         }
+        return MyBLBLApplication.instance.getString(resId)
     }
 
     private fun updatePageState(

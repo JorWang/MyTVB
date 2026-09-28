@@ -166,7 +166,8 @@ class UserSpaceHeaderAdapter(
         fun bind(state: HeaderState) {
             binding.userSpaceTop.textTitle.text = state.userInfo?.name.orEmpty()
             binding.userSpaceTop.textSubtitle.text =
-                state.userInfo?.sign?.takeIf { it.isNotBlank() } ?: "这个人很懒，什么都没写"
+                state.userInfo?.sign?.takeIf { it.isNotBlank() }
+                    ?: binding.root.context.getString(R.string.adapter_default_sign)
             binding.userSpaceTop.buttonFollow.visibility = if (state.showFollow) {
                 View.VISIBLE
             } else {
@@ -177,12 +178,12 @@ class UserSpaceHeaderAdapter(
             binding.layoutStatActions.visibility =
                 if (state.followingCount != null && state.followerCount != null) View.VISIBLE else View.GONE
             binding.tvFollowing.text = buildString {
-                append(NumberUtils.formatCount((state.followingCount ?: 0).toLong()))
+                append(NumberUtils.formatCount(binding.root.context, (state.followingCount ?: 0).toLong()))
                 append("\n")
                 append(binding.root.context.getString(R.string.user_following))
             }
             binding.tvFollower.text = buildString {
-                append(NumberUtils.formatCount((state.followerCount ?: 0).toLong()))
+                append(NumberUtils.formatCount(binding.root.context, (state.followerCount ?: 0).toLong()))
                 append("\n")
                 append(binding.root.context.getString(R.string.user_follower))
             }

@@ -261,7 +261,9 @@ class FavoriteHistoryAdapter(
             views.textLayer.setOwner(
                 ownerText = formatFavoriteOwnerLine(item),
                 showAvatar = hasAuthorName,
-                badgeText = if (!hasAuthorName && item.isPortrait) "竖屏" else ""
+                badgeText = if (!hasAuthorName && item.isPortrait) {
+                    views.root.context.getString(R.string.adapter_portrait)
+                } else ""
             )
             views.textLayer.clearHistoryTrailing()
 
@@ -269,9 +271,9 @@ class FavoriteHistoryAdapter(
             val durationValue = item.duration.coerceAtLeast(0L)
             val durationText = if (durationValue > 0L) NumberUtils.formatDuration(durationValue) else ""
             views.coverMetaOverlay.bind(
-                playCountText = stat?.let { NumberUtils.formatCount(it.play) }.orEmpty(),
+                playCountText = stat?.let { NumberUtils.formatCount(views.root.context, it.play) }.orEmpty(),
                 showPlayCount = stat != null,
-                danmakuText = stat?.let { NumberUtils.formatCount(it.danmaku) }.orEmpty(),
+                danmakuText = stat?.let { NumberUtils.formatCount(views.root.context, it.danmaku) }.orEmpty(),
                 showDanmakuCount = stat != null,
                 durationText = durationText,
                 showChargeBadge = item.isChargingExclusive,
@@ -286,9 +288,9 @@ class FavoriteHistoryAdapter(
         }
 
         private fun formatFavoriteOwnerLine(item: HistoryVideoModel): String {
-            val favoriteTime = TimeUtils.formatRelativeTime(item.favTime)
+            val favoriteTime = TimeUtils.formatRelativeTime(views.root.context, item.favTime)
                 .takeIf { it.isNotBlank() }
-                ?.let { "收藏于$it" }
+                ?.let { views.root.context.getString(R.string.adapter_favorited_at_format, it) }
                 .orEmpty()
             return listOf(item.displayAuthorName, favoriteTime)
                 .filter { it.isNotBlank() }

@@ -301,30 +301,24 @@ class VideoDetailContentAdapter(
             val stat = view.stat
             val subtitleText = buildString {
                 if (view.pubDate > 0) {
-                    append("发布于：")
-                    append(TimeUtils.formatTime(view.pubDate))
+                    append(context.getString(R.string.adapter_published_at_format, TimeUtils.formatTime(view.pubDate)))
                 }
                 stat?.let { s ->
                     if (isNotEmpty()) append(" · ")
-                    append(formatCount(s.view))
-                    append("播放")
+                    append(context.getString(R.string.adapter_stat_view_format, formatCount(s.view)))
                     append(" · ")
-                    append(formatCount(s.danmaku))
-                    append("弹幕")
+                    append(context.getString(R.string.adapter_stat_danmaku_format, formatCount(s.danmaku)))
                     if (s.like > 0) {
                         append(" · ")
-                        append(formatCount(s.like))
-                        append("点赞")
+                        append(context.getString(R.string.adapter_stat_like_format, formatCount(s.like)))
                     }
                     if (s.coin > 0) {
                         append(" · ")
-                        append(formatCount(s.coin))
-                        append("投币")
+                        append(context.getString(R.string.adapter_stat_coin_format, formatCount(s.coin)))
                     }
                     if (s.favorite > 0) {
                         append(" · ")
-                        append(formatCount(s.favorite))
-                        append("收藏")
+                        append(context.getString(R.string.adapter_stat_favorite_format, formatCount(s.favorite)))
                     }
                 }
             }
@@ -374,7 +368,10 @@ class VideoDetailContentAdapter(
                 return
             }
             binding.textDescription.visibility = View.VISIBLE
-            val displayText = "简介：${description.toString().replace(Regex("[\\r\\n]+"), " ")}"
+            val displayText = context.getString(
+                R.string.adapter_description_format,
+                description.toString().replace(Regex("[\\r\\n]+"), " ")
+            )
             binding.textDescription.text = displayText
             binding.textDescription.post {
                 val availableWidth = binding.textDescription.width -
@@ -473,21 +470,16 @@ class VideoDetailContentAdapter(
             val today = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
             if (prefs.getString("last_hint_date", "") != today) {
                 prefs.edit().putString("last_hint_date", today).apply()
-                Toast.makeText(context, "长按点赞可一键三连", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, R.string.adapter_triple_hint, Toast.LENGTH_SHORT).show()
             }
         }
 
         private fun formatCount(count: Long): String {
-            return when {
-                count >= 100000000 -> String.format(Locale.getDefault(), "%.1f亿", count / 100000000.0)
-                count >= 10000 -> String.format(Locale.getDefault(), "%.1f万", count / 10000.0)
-                count >= 1000 -> String.format(Locale.getDefault(), "%.1f千", count / 1000.0)
-                else -> count.toString()
-            }
+            return NumberUtils.formatCount(context, count)
         }
 
         private fun formatFans(count: Long): String {
-            return "${NumberUtils.formatCount(count)}粉丝"
+            return context.getString(R.string.adapter_fans_count_format, NumberUtils.formatCount(context, count))
         }
     }
 
@@ -567,7 +559,9 @@ class VideoDetailContentAdapter(
 
         fun bind(title: String, items: List<VideoModel>, isReverse: Boolean, currentAid: Long) {
             binding.topTitle.text = title
-            binding.textOrder.text = if (isReverse) "正序" else "倒序"
+            binding.textOrder.text = binding.root.context.getString(
+                if (isReverse) R.string.positive_sequence else R.string.negative_sequence
+            )
             if (lastIsReverse != isReverse) {
                 lastIsReverse = isReverse
                 lastCurrentAid = currentAid

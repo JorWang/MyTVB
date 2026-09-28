@@ -228,12 +228,12 @@ class DebugLogFragment : BaseFragment<FragmentDebugLogBinding>() {
             }.onSuccess { path ->
                 AppLog.i("DebugLog", "exportLogs ok path=$path")
                 AlertDialog.Builder(requireContext())
-                    .setTitle("导出成功")
-                    .setMessage("日志已保存到：\n$path\n\n可用文件管理器进入该路径查看，或用 adb pull 取出。")
-                    .setPositiveButton("知道了", null)
+                    .setTitle(R.string.debug_export_success)
+                    .setMessage(getString(R.string.debug_export_success_message_format, path))
+                    .setPositiveButton(R.string.debug_got_it, null)
                     .show()
             }.onFailure { e ->
-                Toast.makeText(requireContext(), "导出失败: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(requireContext(), getString(R.string.debug_export_failed_format, e.message), Toast.LENGTH_LONG).show()
             }
         }
     }

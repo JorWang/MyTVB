@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.mytvb.R
 import com.tencent.smtt.sdk.QbSdk
 import com.tencent.smtt.sdk.TbsListener
 import java.io.File
@@ -137,7 +138,7 @@ object X5TbsDownloader {
     fun download(context: Context, callback: Callback) {
         val cb = callback.onMain()
         if (isDownloading) {
-            cb.onProgress("正在处理中...")
+            cb.onProgress(context.getString(R.string.x5_status_processing))
             return
         }
         if (isDownloaded(context)) {
@@ -164,7 +165,7 @@ object X5TbsDownloader {
                 }
                 val responseCode = conn.responseCode
                 if (responseCode != 200) {
-                    throw Exception("服务器返回错误: $responseCode")
+                    throw Exception(context.getString(R.string.x5_server_error_format, responseCode))
                 }
                 val total = conn.contentLength.toLong()
                 Log.i(TAG, "X5 内核大小: $total 字节")
@@ -181,7 +182,7 @@ object X5TbsDownloader {
                             if (total > 0) {
                                 val percent = (downloaded * 100 / total).toInt()
                                 if (percent != lastPercent) {
-                                    callback.onProgress("下载中 $percent%")
+                                    callback.onProgress(context.getString(R.string.x5_downloading_percent_format, percent))
                                     lastPercent = percent
                                 }
                             }
@@ -191,14 +192,14 @@ object X5TbsDownloader {
                 // 校验 MD5
                 if (!isDownloaded(context)) {
                     file.delete()
-                    throw Exception("MD5 校验失败")
+                    throw Exception(context.getString(R.string.x5_md5_check_failed))
                 }
                 Log.i(TAG, "X5 下载完成，开始安装")
                 install(context, callback)
             } catch (e: Exception) {
                 Log.e(TAG, "X5 下载失败: ${e.message}", e)
                 isDownloading = false
-                callback.onComplete(false, "下载失败: ${e.message}")
+                callback.onComplete(false, context.getString(R.string.x5_download_failed_format, e.message))
             }
         }.start()
     }
@@ -213,7 +214,7 @@ object X5TbsDownloader {
         val file = getTbsFile(context)
         val version = getVersion()
         val mainHandler = Handler(Looper.getMainLooper())
-        mainHandler.post { callback.onProgress("安装中...") }
+        mainHandler.post { callback.onProgress(context.getString(R.string.x5_installing)) }
 
         QbSdk.setTbsListener(object : TbsListener {
             override fun onDownloadFinish(errorCode: Int) {
@@ -228,11 +229,11 @@ object X5TbsDownloader {
                     if (code == 200) {
                         isDownloading = false
                         markInstalled(context, version)
-                        callback.onComplete(true, "✓ X5已安装！3秒后重启...")
+                        callback.onComplete(true, context.getString(R.string.x5_installed_restart_countdown))
                         mainHandler.postDelayed({ restartApp(context) }, 3000)
                     } else {
                         isDownloading = false
-                        callback.onComplete(false, "安装失败(code:$code)，点击重试")
+                        callback.onComplete(false, context.getString(R.string.x5_install_failed_code_format, code))
                     }
                 }
             }
@@ -257,14 +258,14 @@ object X5TbsDownloader {
                 if (!canLoad) {
                     mainHandler.post {
                         isDownloading = false
-                        callback.onComplete(false, "安装后 canLoadX5 仍为 false，可能设备不支持")
+                        callback.onComplete(false, context.getString(R.string.x5_install_unsupported))
                     }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "安装异常: ${e.message}")
                 mainHandler.post {
                     isDownloading = false
-                    callback.onComplete(false, "安装异常: ${e.message}")
+                    callback.onComplete(false, context.getString(R.string.x5_install_error_format, e.message))
                 }
             }
         }.start()

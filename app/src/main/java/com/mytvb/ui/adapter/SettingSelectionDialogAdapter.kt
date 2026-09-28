@@ -83,9 +83,11 @@ class SettingSelectionDialogAdapter(
 
         private fun applyState(isSelected: Boolean, isFocused: Boolean) {
             if (isSelected && sortDirection >= 0) {
-                binding.tvCurrent.text = if (sortDirection == 1) "↑ 升序" else "↓ 降序"
+                binding.tvCurrent.text = binding.root.context.getString(
+                    if (sortDirection == 1) R.string.adapter_sort_ascending else R.string.adapter_sort_descending
+                )
             } else {
-                binding.tvCurrent.text = "当前"
+                binding.tvCurrent.text = binding.root.context.getString(R.string.adapter_current_selection)
             }
             binding.tvCurrent.visibility = if (isSelected) View.VISIBLE else View.GONE
             binding.iconCheck.visibility = if (isSelected) View.VISIBLE else View.GONE

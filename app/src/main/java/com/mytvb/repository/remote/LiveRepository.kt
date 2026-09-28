@@ -1,5 +1,7 @@
 package com.mytvb.repository.remote
 
+import com.mytvb.R
+import com.mytvb.MyBLBLApplication
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -47,10 +49,10 @@ class LiveRepository(
         return runCatching {
             val roomInfo = resolveRoomInfo(roomId)
             if (roomInfo == null) {
-                throw IllegalStateException("直播间信息获取失败")
+                throw IllegalStateException(MyBLBLApplication.instance.getString(R.string.live_error_room_info_failed))
             }
             if (roomInfo.liveStatus != 1) {
-                throw IllegalStateException("当前直播间未开播")
+                throw IllegalStateException(MyBLBLApplication.instance.getString(R.string.live_error_room_not_living))
             }
 
             val v2Response = sessionGateway.executeWithRiskControlRetry(
@@ -85,7 +87,7 @@ class LiveRepository(
                     return@runCatching playInfo
                 }
             }
-            throw IllegalStateException(v2Response.errorMessage.ifBlank { "无法获取直播流地址" })
+            throw IllegalStateException(v2Response.errorMessage.ifBlank { MyBLBLApplication.instance.getString(R.string.live_error_no_stream_url) })
         }
     }
 
@@ -154,7 +156,7 @@ class LiveRepository(
                 }
                 data
             } else {
-                throw IllegalStateException(response.errorMessage.ifBlank { "获取IP信息失败" })
+                throw IllegalStateException(response.errorMessage.ifBlank { MyBLBLApplication.instance.getString(R.string.live_error_ip_info_failed) })
             }
         }
     }
@@ -188,7 +190,7 @@ class LiveRepository(
                 updateLiveHeartbeatState(heartbeatRoomInfo, response.data, sequence = 0)
                 response.data
             } else {
-                throw IllegalStateException(response.errorMessage.ifBlank { "获取心跳密钥失败" })
+                throw IllegalStateException(response.errorMessage.ifBlank { MyBLBLApplication.instance.getString(R.string.live_error_heartbeat_key_failed) })
             }
         }
     }
@@ -199,7 +201,7 @@ class LiveRepository(
             if (response.code == 0 && response.data != null) {
                 response.data
             } else {
-                throw IllegalStateException(response.errorMessage.ifBlank { "获取房间用户状态失败" })
+                throw IllegalStateException(response.errorMessage.ifBlank { MyBLBLApplication.instance.getString(R.string.live_error_room_user_state_failed) })
             }
         }
     }
@@ -210,7 +212,7 @@ class LiveRepository(
             if (response.code == 0 && response.data != null) {
                 response.data
             } else {
-                throw IllegalStateException(response.errorMessage.ifBlank { "获取历史弹幕失败" })
+                throw IllegalStateException(response.errorMessage.ifBlank { MyBLBLApplication.instance.getString(R.string.live_error_history_danmaku_failed) })
             }
         }
     }
@@ -235,7 +237,7 @@ class LiveRepository(
                     lastReportTsMs = nowMs
                 )
             } else {
-                throw IllegalStateException(response.errorMessage.ifBlank { "直播心跳失败" })
+                throw IllegalStateException(response.errorMessage.ifBlank { MyBLBLApplication.instance.getString(R.string.live_error_heartbeat_failed) })
             }
             AppLog.d(TAG, "sendLiveHeartbeatX: roomId=$roomId, sequence=$sequence")
         }

@@ -1,5 +1,7 @@
 package com.mytvb.feature.player.sponsor
 
+import android.content.Context
+import com.mytvb.R
 import com.mytvb.core.common.json.GsonHolder
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -18,9 +20,13 @@ object SponsorBlockRepository {
     private const val BASE_URL = "https://bsbsb.top/api"
     private const val TAG = "SponsorBlock"
     private const val CACHE_TTL_MS = 30 * 60 * 1000L
-    private const val CONNECTION_ERROR = "空降助手连接失败，请检查网络"
+    // 无 context 时的中文回退（兼容未传 context 的旧调用方）
+    private const val CONNECTION_ERROR_FALLBACK = "空降助手连接失败，请检查网络"
 
     private val gson = GsonHolder.DEFAULT
+
+    private fun connectionError(context: Context?): String =
+        context?.getString(R.string.player_sponsor_error_connection) ?: CONNECTION_ERROR_FALLBACK
 
     private data class CacheEntry(
         val segments: List<SponsorSegment>,
@@ -34,7 +40,7 @@ object SponsorBlockRepository {
         val segments: List<SponsorSegment> = emptyList()
     )
 
-    suspend fun testConnection(): String? = withContext(Dispatchers.IO) {
+    suspend fun testConnection(context: Context? = null): String? = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
                 .url("$BASE_URL/status")
@@ -45,18 +51,20 @@ object SponsorBlockRepository {
                 .build()
 
             client.newCall(request).execute().use { response ->
-                if (response.code == 200) null else "空降助手服务异常 (${response.code})"
+                if (response.code == 200) null
+                else context?.getString(R.string.player_sponsor_service_error_format, response.code)
+                    ?: "空降助手服务异常 (${response.code})"
             }
         } catch (e: IOException) {
             AppLog.e(TAG, "连通性测试失败: ${e.message}")
-            CONNECTION_ERROR
+            connectionError(context)
         } catch (e: Exception) {
             AppLog.e(TAG, "连通性测试异常: ${e.message}", e)
-            "空降助手测试失败"
+            context?.getString(R.string.player_sponsor_test_failed) ?: "空降助手测试失败"
         }
     }
 
-    suspend fun testFetch(): String = withContext(Dispatchers.IO) {
+    suspend fun testFetch(context: Context? = null): String = withContext(Dispatchers.IO) {
         try {
             val url = "$BASE_URL/skipSegments/a1b2?category=sponsor"
             val request = Request.Builder()
@@ -68,21 +76,31 @@ object SponsorBlockRepository {
                 .build()
 
             client.newCall(request).execute().use { response ->
-                if (response.code != 200) return@withContext "测试失败：API 返回 ${response.code}"
+                if (response.code != 200) return@withContext (
+                    context?.getString(R.string.player_sponsor_test_api_error_format, response.code)
+                        ?: "测试失败：API 返回 ${response.code}"
+                    )
 
-                val body = response.body?.string() ?: return@withContext "测试失败：响应为空"
+                val body = response.body?.string()
+                    ?: return@withContext (
+                        context?.getString(R.string.player_sponsor_test_empty_response)
+                            ?: "测试失败：响应为空"
+                    )
                 val type = object : TypeToken<List<HashVideoResponse>>() {}.type
                 val videos = gson.fromJson<List<HashVideoResponse>>(body, type)
                 val totalSegments = videos.sumOf { it.segments.size }
                 return@withContext if (totalSegments > 0) {
-                    "测试通过：解析正常，获取到 $totalSegments 个片段"
+                    context?.getString(R.string.player_sponsor_test_pass_segments_format, totalSegments)
+                        ?: "测试通过：解析正常，获取到 $totalSegments 个片段"
                 } else {
-                    "测试通过：连接和解析正常（当前无测试数据）"
+                    context?.getString(R.string.player_sponsor_test_pass_no_data)
+                        ?: "测试通过：连接和解析正常（当前无测试数据）"
                 }
             }
         } catch (e: Exception) {
             AppLog.e(TAG, "片段拉取测试失败: ${e.message}", e)
-            "测试失败：${e.message}"
+            context?.getString(R.string.player_sponsor_test_error_message_format, e.message ?: "")
+                ?: "测试失败：${e.message}"
         }
     }
 
@@ -147,7 +165,7 @@ object SponsorBlockRepository {
             }
         } catch (e: IOException) {
             AppLog.w(TAG, "$bvid: ${e.message}")
-            SegmentResult(error = CONNECTION_ERROR)
+            SegmentResult(error = CONNECTION_ERROR_FALLBACK)
         } catch (e: Exception) {
             AppLog.w(TAG, "$bvid: ${e.message}", e)
             SegmentResult(error = "空降助手加载失败")

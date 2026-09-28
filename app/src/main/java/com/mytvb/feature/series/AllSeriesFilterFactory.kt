@@ -20,16 +20,16 @@ object AllSeriesFilterFactory {
         }
     }
 
-    fun createFiltersForUrl(url: String, seasonType: Int): List<AllSeriesFilterModel> {
+    fun createFiltersForUrl(context: Context, url: String, seasonType: Int): List<AllSeriesFilterModel> {
         val urlParams = parseUrlParams(url)
         val filters = when (seasonType) {
-            SeriesType.ANIME -> createAnimeFiltersNoContext()
-            SeriesType.CHINA_ANIME -> createChinaAnimeFiltersNoContext()
-            SeriesType.MOVIE -> createMovieFiltersNoContext()
-            SeriesType.DRAMA -> createDramaFiltersNoContext()
-            SeriesType.DOCUMENTARY -> createDocumentaryFiltersNoContext()
-            SeriesType.VARIETY -> createVarietyFiltersNoContext()
-            else -> createAnimeFiltersNoContext()
+            SeriesType.ANIME -> createAnimeFiltersNoContext(context)
+            SeriesType.CHINA_ANIME -> createChinaAnimeFiltersNoContext(context)
+            SeriesType.MOVIE -> createMovieFiltersNoContext(context)
+            SeriesType.DRAMA -> createDramaFiltersNoContext(context)
+            SeriesType.DOCUMENTARY -> createDocumentaryFiltersNoContext(context)
+            SeriesType.VARIETY -> createVarietyFiltersNoContext(context)
+            else -> createAnimeFiltersNoContext(context)
         }
         return applyUrlParamsToFilters(filters, urlParams)
     }
@@ -42,7 +42,7 @@ object AllSeriesFilterFactory {
         if (moreUrl.isBlank()) {
             return create(context, seasonType)
         }
-        val urlFilters = createFiltersForUrl(moreUrl, seasonType)
+        val urlFilters = createFiltersForUrl(context, moreUrl, seasonType)
         val defaultFilters = create(context, seasonType)
         return defaultFilters.map { defaultFilter ->
             if (shouldIgnoreInitialUrlSelection(seasonType, defaultFilter.key)) {
@@ -78,16 +78,16 @@ object AllSeriesFilterFactory {
         add(createStyleFilter(context, SeriesType.ANIME))
     }
 
-    private fun createAnimeFiltersNoContext(): List<AllSeriesFilterModel> = buildList {
-        add(createOrderFilterNoContext(SeriesType.ANIME))
-        add(createVersionTypeFilterNoContext())
-        add(createSpokenLanguageFilterNoContext())
-        add(createAreaFilterNoContext(SeriesType.ANIME))
-        add(createStatusFilterNoContext())
-        add(createPayTypeFilterNoContext())
-        add(createSeasonMonthFilterNoContext())
-        add(createAnimeYearFilterNoContext())
-        add(createStyleFilterNoContext(SeriesType.ANIME))
+    private fun createAnimeFiltersNoContext(context: Context): List<AllSeriesFilterModel> = buildList {
+        add(createOrderFilterNoContext(context, SeriesType.ANIME))
+        add(createVersionTypeFilterNoContext(context))
+        add(createSpokenLanguageFilterNoContext(context))
+        add(createAreaFilterNoContext(context, SeriesType.ANIME))
+        add(createStatusFilterNoContext(context))
+        add(createPayTypeFilterNoContext(context))
+        add(createSeasonMonthFilterNoContext(context))
+        add(createAnimeYearFilterNoContext(context))
+        add(createStyleFilterNoContext(context, SeriesType.ANIME))
     }
 
     private fun createChinaAnimeFilters(context: Context): List<AllSeriesFilterModel> = buildList {
@@ -99,13 +99,13 @@ object AllSeriesFilterFactory {
         add(createStyleFilter(context, SeriesType.CHINA_ANIME))
     }
 
-    private fun createChinaAnimeFiltersNoContext(): List<AllSeriesFilterModel> = buildList {
-        add(createOrderFilterNoContext(SeriesType.CHINA_ANIME))
-        add(createVersionTypeFilterNoContext())
-        add(createStatusFilterNoContext())
-        add(createPayTypeFilterNoContext())
-        add(createAnimeYearFilterNoContext())
-        add(createStyleFilterNoContext(SeriesType.CHINA_ANIME))
+    private fun createChinaAnimeFiltersNoContext(context: Context): List<AllSeriesFilterModel> = buildList {
+        add(createOrderFilterNoContext(context, SeriesType.CHINA_ANIME))
+        add(createVersionTypeFilterNoContext(context))
+        add(createStatusFilterNoContext(context))
+        add(createPayTypeFilterNoContext(context))
+        add(createAnimeYearFilterNoContext(context))
+        add(createStyleFilterNoContext(context, SeriesType.CHINA_ANIME))
     }
 
     private fun createMovieFilters(context: Context): List<AllSeriesFilterModel> = buildList {
@@ -116,12 +116,12 @@ object AllSeriesFilterFactory {
         add(createPayTypeFilter(context))
     }
 
-    private fun createMovieFiltersNoContext(): List<AllSeriesFilterModel> = buildList {
-        add(createOrderFilterNoContext(SeriesType.MOVIE))
-        add(createAreaFilterNoContext(SeriesType.MOVIE))
-        add(createStyleFilterNoContext(SeriesType.MOVIE))
-        add(createReleaseDateFilterNoContext())
-        add(createPayTypeFilterNoContext())
+    private fun createMovieFiltersNoContext(context: Context): List<AllSeriesFilterModel> = buildList {
+        add(createOrderFilterNoContext(context, SeriesType.MOVIE))
+        add(createAreaFilterNoContext(context, SeriesType.MOVIE))
+        add(createStyleFilterNoContext(context, SeriesType.MOVIE))
+        add(createReleaseDateFilterNoContext(context))
+        add(createPayTypeFilterNoContext(context))
     }
 
     private fun createDramaFilters(context: Context): List<AllSeriesFilterModel> = buildList {
@@ -132,12 +132,12 @@ object AllSeriesFilterFactory {
         add(createPayTypeFilter(context))
     }
 
-    private fun createDramaFiltersNoContext(): List<AllSeriesFilterModel> = buildList {
-        add(createOrderFilterNoContext(SeriesType.DRAMA))
-        add(createAreaFilterNoContext(SeriesType.DRAMA))
-        add(createStyleFilterNoContext(SeriesType.DRAMA))
-        add(createReleaseDateFilterNoContext())
-        add(createPayTypeFilterNoContext())
+    private fun createDramaFiltersNoContext(context: Context): List<AllSeriesFilterModel> = buildList {
+        add(createOrderFilterNoContext(context, SeriesType.DRAMA))
+        add(createAreaFilterNoContext(context, SeriesType.DRAMA))
+        add(createStyleFilterNoContext(context, SeriesType.DRAMA))
+        add(createReleaseDateFilterNoContext(context))
+        add(createPayTypeFilterNoContext(context))
     }
 
     private fun createDocumentaryFilters(context: Context): List<AllSeriesFilterModel> = buildList {
@@ -148,12 +148,12 @@ object AllSeriesFilterFactory {
         add(createPayTypeFilter(context))
     }
 
-    private fun createDocumentaryFiltersNoContext(): List<AllSeriesFilterModel> = buildList {
-        add(createOrderFilterNoContext(SeriesType.DOCUMENTARY))
-        add(createStyleFilterNoContext(SeriesType.DOCUMENTARY))
-        add(createProducerFilterNoContext())
-        add(createReleaseDateFilterNoContext())
-        add(createPayTypeFilterNoContext())
+    private fun createDocumentaryFiltersNoContext(context: Context): List<AllSeriesFilterModel> = buildList {
+        add(createOrderFilterNoContext(context, SeriesType.DOCUMENTARY))
+        add(createStyleFilterNoContext(context, SeriesType.DOCUMENTARY))
+        add(createProducerFilterNoContext(context))
+        add(createReleaseDateFilterNoContext(context))
+        add(createPayTypeFilterNoContext(context))
     }
 
     private fun createVarietyFilters(context: Context): List<AllSeriesFilterModel> = buildList {
@@ -162,10 +162,10 @@ object AllSeriesFilterFactory {
         add(createStyleFilter(context, SeriesType.VARIETY))
     }
 
-    private fun createVarietyFiltersNoContext(): List<AllSeriesFilterModel> = buildList {
-        add(createOrderFilterNoContext(SeriesType.VARIETY))
-        add(createPayTypeFilterNoContext())
-        add(createStyleFilterNoContext(SeriesType.VARIETY))
+    private fun createVarietyFiltersNoContext(context: Context): List<AllSeriesFilterModel> = buildList {
+        add(createOrderFilterNoContext(context, SeriesType.VARIETY))
+        add(createPayTypeFilterNoContext(context))
+        add(createStyleFilterNoContext(context, SeriesType.VARIETY))
     }
 
     private fun parseUrlParams(url: String): Map<String, String> {
@@ -196,102 +196,102 @@ object AllSeriesFilterFactory {
         }
     }
 
-    private fun createAreaFilterNoContext(seasonType: Int): AllSeriesFilterModel {
+    private fun createAreaFilterNoContext(context: Context, seasonType: Int): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "地区",
+            title = context.getString(R.string.filter_area),
             key = "area",
             iconResourceId = 0,
-            options = createAreaOptions(seasonType)
+            options = createAreaOptions(context, seasonType)
         )
     }
 
-    private fun createStyleFilterNoContext(seasonType: Int): AllSeriesFilterModel {
+    private fun createStyleFilterNoContext(context: Context, seasonType: Int): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "风格",
+            title = context.getString(R.string.filter_style),
             key = "style_id",
             iconResourceId = 0,
-            options = createStyleOptions(seasonType)
+            options = createStyleOptions(context, seasonType)
         )
     }
 
-    private fun createOrderFilterNoContext(seasonType: Int): AllSeriesFilterModel {
+    private fun createOrderFilterNoContext(context: Context, seasonType: Int): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "排序",
+            title = context.getString(R.string.filter_order),
             key = "order",
             iconResourceId = 0,
-            options = createOrderOptions(seasonType)
+            options = createOrderOptions(context, seasonType)
         )
     }
 
-    private fun createStatusFilterNoContext(): AllSeriesFilterModel {
+    private fun createStatusFilterNoContext(context: Context): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "状态",
+            title = context.getString(R.string.filter_status),
             key = "is_finish",
             iconResourceId = 0,
-            options = createStatusOptions()
+            options = createStatusOptions(context)
         )
     }
 
-    private fun createPayTypeFilterNoContext(): AllSeriesFilterModel {
+    private fun createPayTypeFilterNoContext(context: Context): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "付费类型",
+            title = context.getString(R.string.filter_pay_type),
             key = "season_status",
             iconResourceId = 0,
-            options = createPayTypeOptions()
+            options = createPayTypeOptions(context)
         )
     }
 
-    private fun createReleaseDateFilterNoContext(): AllSeriesFilterModel {
+    private fun createReleaseDateFilterNoContext(context: Context): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "年份",
+            title = context.getString(R.string.filter_year),
             key = "release_date",
             iconResourceId = 0,
-            options = createReleaseDateOptions()
+            options = createReleaseDateOptions(context)
         )
     }
 
-    private fun createAnimeYearFilterNoContext(): AllSeriesFilterModel {
+    private fun createAnimeYearFilterNoContext(context: Context): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "年份",
+            title = context.getString(R.string.filter_year),
             key = "year",
             iconResourceId = 0,
-            options = createAnimeYearOptions()
+            options = createAnimeYearOptions(context)
         )
     }
 
-    private fun createVersionTypeFilterNoContext(): AllSeriesFilterModel {
+    private fun createVersionTypeFilterNoContext(context: Context): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "类型",
+            title = context.getString(R.string.filter_type),
             key = "season_version",
             iconResourceId = 0,
-            options = createVersionTypeOptions()
+            options = createVersionTypeOptions(context)
         )
     }
 
-    private fun createSpokenLanguageFilterNoContext(): AllSeriesFilterModel {
+    private fun createSpokenLanguageFilterNoContext(context: Context): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "配音",
+            title = context.getString(R.string.filter_spoken),
             key = "spoken_language_type",
             iconResourceId = 0,
-            options = createSpokenLanguageOptions()
+            options = createSpokenLanguageOptions(context)
         )
     }
 
-    private fun createSeasonMonthFilterNoContext(): AllSeriesFilterModel {
+    private fun createSeasonMonthFilterNoContext(context: Context): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "季度",
+            title = context.getString(R.string.filter_season),
             key = "season_month",
             iconResourceId = 0,
-            options = createSeasonMonthOptions()
+            options = createSeasonMonthOptions(context)
         )
     }
 
-    private fun createProducerFilterNoContext(): AllSeriesFilterModel {
+    private fun createProducerFilterNoContext(context: Context): AllSeriesFilterModel {
         return AllSeriesFilterModel(
-            title = "出品",
+            title = context.getString(R.string.filter_publish),
             key = "producer_id",
             iconResourceId = 0,
-            options = createProducerOptions()
+            options = createProducerOptions(context)
         )
     }
 
@@ -300,7 +300,7 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_area),
             key = "area",
             iconResourceId = R.drawable.ic_earth,
-            options = createAreaOptions(seasonType)
+            options = createAreaOptions(context, seasonType)
         )
     }
 
@@ -309,7 +309,7 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_style),
             key = "style_id",
             iconResourceId = R.drawable.tab_dynamic,
-            options = createStyleOptions(seasonType)
+            options = createStyleOptions(context, seasonType)
         )
     }
 
@@ -318,7 +318,7 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_order),
             key = "order",
             iconResourceId = R.drawable.ic_sort,
-            options = createOrderOptions(seasonType)
+            options = createOrderOptions(context, seasonType)
         )
     }
 
@@ -327,7 +327,7 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_status),
             key = "is_finish",
             iconResourceId = R.drawable.ic_status,
-            options = createStatusOptions()
+            options = createStatusOptions(context)
         )
     }
 
@@ -336,7 +336,7 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_pay_type),
             key = "season_status",
             iconResourceId = R.drawable.ic_pay,
-            options = createPayTypeOptions()
+            options = createPayTypeOptions(context)
         )
     }
 
@@ -345,7 +345,7 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_year),
             key = "release_date",
             iconResourceId = R.drawable.ic_calendar,
-            options = createReleaseDateOptions()
+            options = createReleaseDateOptions(context)
         )
     }
 
@@ -354,7 +354,7 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_year),
             key = "year",
             iconResourceId = R.drawable.ic_calendar,
-            options = createAnimeYearOptions()
+            options = createAnimeYearOptions(context)
         )
     }
 
@@ -363,7 +363,7 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_type),
             key = "season_version",
             iconResourceId = R.drawable.tab_recommend,
-            options = createVersionTypeOptions()
+            options = createVersionTypeOptions(context)
         )
     }
 
@@ -372,7 +372,7 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_spoken),
             key = "spoken_language_type",
             iconResourceId = R.drawable.ic_voice,
-            options = createSpokenLanguageOptions()
+            options = createSpokenLanguageOptions(context)
         )
     }
 
@@ -381,7 +381,7 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_season),
             key = "season_month",
             iconResourceId = R.drawable.ic_flower,
-            options = createSeasonMonthOptions()
+            options = createSeasonMonthOptions(context)
         )
     }
 
@@ -390,288 +390,293 @@ object AllSeriesFilterFactory {
             title = context.getString(R.string.filter_publish),
             key = "producer_id",
             iconResourceId = R.drawable.ic_tv,
-            options = createProducerOptions()
+            options = createProducerOptions(context)
         )
     }
 
-    private fun createAreaOptions(seasonType: Int): List<AllSeriesFilterOption> {
+    private fun createAreaOptions(context: Context, seasonType: Int): List<AllSeriesFilterOption> {
+        fun areaTitle(resId: Int): String = context.getString(resId)
         return when (seasonType) {
             SeriesType.ANIME -> listOf(
-                option("全部地区", "-1"),
-                option("日本", "2"),
-                option("美国", "3"),
-                option("其他", "1,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70")
+                option(areaTitle(R.string.series_filter_area_all), "-1"),
+                option(areaTitle(R.string.series_filter_area_japan), "2"),
+                option(areaTitle(R.string.series_filter_area_usa), "3"),
+                option(areaTitle(R.string.series_filter_area_other), "1,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70")
             )
             SeriesType.DRAMA -> listOf(
-                option("全部地区", "-1"),
-                option("中国", "1"),
-                option("日本", "2"),
-                option("美国", "3"),
-                option("英国", "4"),
-                option("泰国", "10"),
-                option("其他", "5,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70")
+                option(areaTitle(R.string.series_filter_area_all), "-1"),
+                option(areaTitle(R.string.series_filter_area_china), "1"),
+                option(areaTitle(R.string.series_filter_area_japan), "2"),
+                option(areaTitle(R.string.series_filter_area_usa), "3"),
+                option(areaTitle(R.string.series_filter_area_uk), "4"),
+                option(areaTitle(R.string.series_filter_area_thailand), "10"),
+                option(areaTitle(R.string.series_filter_area_other), "5,8,9,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70")
             )
             else -> listOf(
-                option("全部地区", "-1"),
-                option("中国大陆", "1"),
-                option("中国港台", "6,7"),
-                option("美国", "3"),
-                option("日本", "2"),
-                option("韩国", "8"),
-                option("法国", "9"),
-                option("英国", "4"),
-                option("德国", "15"),
-                option("泰国", "10"),
-                option("意大利", "35"),
-                option("西班牙", "13"),
-                option("其他", "5,11,12,14,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70")
+                option(areaTitle(R.string.series_filter_area_all), "-1"),
+                option(areaTitle(R.string.series_filter_area_china_mainland), "1"),
+                option(areaTitle(R.string.series_filter_area_china_hk_tw), "6,7"),
+                option(areaTitle(R.string.series_filter_area_usa), "3"),
+                option(areaTitle(R.string.series_filter_area_japan), "2"),
+                option(areaTitle(R.string.series_filter_area_korea), "8"),
+                option(areaTitle(R.string.series_filter_area_france), "9"),
+                option(areaTitle(R.string.series_filter_area_uk), "4"),
+                option(areaTitle(R.string.series_filter_area_germany), "15"),
+                option(areaTitle(R.string.series_filter_area_thailand), "10"),
+                option(areaTitle(R.string.series_filter_area_italy), "35"),
+                option(areaTitle(R.string.series_filter_area_spain), "13"),
+                option(areaTitle(R.string.series_filter_area_other), "5,11,12,14,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70")
             )
         }
     }
 
-    private fun createStyleOptions(seasonType: Int): List<AllSeriesFilterOption> {
+    private fun createStyleOptions(context: Context, seasonType: Int): List<AllSeriesFilterOption> {
+        fun t(resId: Int): String = context.getString(resId)
         return when (seasonType) {
             SeriesType.ANIME, SeriesType.CHINA_ANIME -> listOf(
-                option("全部风格", "-1"),
-                option("原创", "10010"),
-                option("漫画改", "10011"),
-                option("小说改", "10012"),
-                option("游戏改", "10013"),
-                option("特摄", "10102"),
-                option("布袋戏", "10015"),
-                option("热血", "10016"),
-                option("穿越", "10017"),
-                option("奇幻", "10018"),
-                option("战斗", "10020"),
-                option("搞笑", "10021"),
-                option("日常", "10022"),
-                option("科幻", "10023"),
-                option("萌系", "10024"),
-                option("治愈", "10025"),
-                option("校园", "10026"),
-                option("少儿", "10027"),
-                option("泡面", "10028"),
-                option("恋爱", "10029"),
-                option("少女", "10030"),
-                option("魔法", "10031"),
-                option("冒险", "10032"),
-                option("历史", "10033"),
-                option("架空", "10034"),
-                option("机战", "10035"),
-                option("神魔", "10036"),
-                option("声控", "10037"),
-                option("运动", "10038"),
-                option("励志", "10039"),
-                option("音乐", "10040"),
-                option("推理", "10041"),
-                option("社团", "10042"),
-                option("智斗", "10043"),
-                option("催泪", "10044"),
-                option("美食", "10045"),
-                option("偶像", "10046"),
-                option("乙女", "10047"),
-                option("职场", "10048")
+                option(t(R.string.series_style_all), "-1"),
+                option(t(R.string.series_style_original), "10010"),
+                option(t(R.string.series_style_manga_adapted), "10011"),
+                option(t(R.string.series_style_novel_adapted), "10012"),
+                option(t(R.string.series_style_game_adapted), "10013"),
+                option(t(R.string.series_style_tokusatsu), "10102"),
+                option(t(R.string.series_style_puppet_show), "10015"),
+                option(t(R.string.series_style_hot_blooded), "10016"),
+                option(t(R.string.series_style_time_travel), "10017"),
+                option(t(R.string.series_style_fantasy), "10018"),
+                option(t(R.string.series_style_battle), "10020"),
+                option(t(R.string.series_style_funny), "10021"),
+                option(t(R.string.series_style_daily_life), "10022"),
+                option(t(R.string.series_style_sci_fi), "10023"),
+                option(t(R.string.series_style_moe), "10024"),
+                option(t(R.string.series_style_healing), "10025"),
+                option(t(R.string.series_style_school), "10026"),
+                option(t(R.string.series_style_children), "10027"),
+                option(t(R.string.series_style_instant_noodle), "10028"),
+                option(t(R.string.series_style_romance), "10029"),
+                option(t(R.string.series_style_shoujo), "10030"),
+                option(t(R.string.series_style_magic), "10031"),
+                option(t(R.string.series_style_adventure), "10032"),
+                option(t(R.string.series_style_history), "10033"),
+                option(t(R.string.series_style_alternate_world), "10034"),
+                option(t(R.string.series_style_mecha), "10035"),
+                option(t(R.string.series_style_gods_and_demons), "10036"),
+                option(t(R.string.series_style_voice), "10037"),
+                option(t(R.string.series_style_sports), "10038"),
+                option(t(R.string.series_style_inspirational), "10039"),
+                option(t(R.string.series_style_music), "10040"),
+                option(t(R.string.series_style_mystery), "10041"),
+                option(t(R.string.series_style_club), "10042"),
+                option(t(R.string.series_style_battle_of_wits), "10043"),
+                option(t(R.string.series_style_tearjerker), "10044"),
+                option(t(R.string.series_style_food), "10045"),
+                option(t(R.string.series_style_idol), "10046"),
+                option(t(R.string.series_style_otome), "10047"),
+                option(t(R.string.series_style_workplace), "10048")
             )
             SeriesType.DRAMA -> listOf(
-                option("全部风格", "-1"),
-                option("搞笑", "10021"),
-                option("奇幻", "10018"),
-                option("战争", "10058"),
-                option("武侠", "10078"),
-                option("青春", "10079"),
-                option("短剧", "10103"),
-                option("都市", "10080"),
-                option("古装", "10081"),
-                option("谍战", "10082"),
-                option("经典", "10083"),
-                option("情感", "10084"),
-                option("悬疑", "10057"),
-                option("励志", "10039"),
-                option("神话", "10085"),
-                option("穿越", "10017"),
-                option("年代", "10086"),
-                option("农村", "10087"),
-                option("刑侦", "10088"),
-                option("剧情", "10050"),
-                option("家庭", "10061"),
-                option("历史", "10033"),
-                option("军旅", "10089")
+                option(t(R.string.series_style_all), "-1"),
+                option(t(R.string.series_style_funny), "10021"),
+                option(t(R.string.series_style_fantasy), "10018"),
+                option(t(R.string.series_style_war), "10058"),
+                option(t(R.string.series_style_wuxia), "10078"),
+                option(t(R.string.series_style_youth), "10079"),
+                option(t(R.string.series_style_short_drama), "10103"),
+                option(t(R.string.series_style_urban), "10080"),
+                option(t(R.string.series_style_costume_drama), "10081"),
+                option(t(R.string.series_style_spy_war), "10082"),
+                option(t(R.string.series_style_classic), "10083"),
+                option(t(R.string.series_style_emotion), "10084"),
+                option(t(R.string.series_style_suspense), "10057"),
+                option(t(R.string.series_style_inspirational), "10039"),
+                option(t(R.string.series_style_mythology), "10085"),
+                option(t(R.string.series_style_time_travel), "10017"),
+                option(t(R.string.series_style_era), "10086"),
+                option(t(R.string.series_style_rural), "10087"),
+                option(t(R.string.series_style_criminal_investigation), "10088"),
+                option(t(R.string.series_style_drama), "10050"),
+                option(t(R.string.series_style_family), "10061"),
+                option(t(R.string.series_style_history), "10033"),
+                option(t(R.string.series_style_military_life), "10089")
             )
             SeriesType.MOVIE -> listOf(
-                option("全部风格", "-1"),
-                option("短片", "10104"),
-                option("剧情", "10050"),
-                option("喜剧", "10051"),
-                option("爱情", "10052"),
-                option("动作", "10053"),
-                option("恐怖", "10054"),
-                option("科幻", "10023"),
-                option("犯罪", "10055"),
-                option("惊悚", "10056"),
-                option("悬疑", "10057"),
-                option("奇幻", "10018"),
-                option("战争", "10058"),
-                option("动画", "10059"),
-                option("传记", "10060"),
-                option("家庭", "10061"),
-                option("歌舞", "10062"),
-                option("历史", "10033"),
-                option("冒险", "10032"),
-                option("纪实", "10063"),
-                option("灾难", "10064"),
-                option("漫画改", "10011"),
-                option("小说改", "10012")
+                option(t(R.string.series_style_all), "-1"),
+                option(t(R.string.series_style_short_film), "10104"),
+                option(t(R.string.series_style_drama), "10050"),
+                option(t(R.string.series_style_comedy), "10051"),
+                option(t(R.string.series_style_love), "10052"),
+                option(t(R.string.series_style_action), "10053"),
+                option(t(R.string.series_style_horror), "10054"),
+                option(t(R.string.series_style_sci_fi), "10023"),
+                option(t(R.string.series_style_crime), "10055"),
+                option(t(R.string.series_style_thriller), "10056"),
+                option(t(R.string.series_style_suspense), "10057"),
+                option(t(R.string.series_style_fantasy), "10018"),
+                option(t(R.string.series_style_war), "10058"),
+                option(t(R.string.series_style_animation), "10059"),
+                option(t(R.string.series_style_biography), "10060"),
+                option(t(R.string.series_style_family), "10061"),
+                option(t(R.string.series_style_musical), "10062"),
+                option(t(R.string.series_style_history), "10033"),
+                option(t(R.string.series_style_adventure), "10032"),
+                option(t(R.string.series_style_documentary), "10063"),
+                option(t(R.string.series_style_disaster), "10064"),
+                option(t(R.string.series_style_manga_adapted), "10011"),
+                option(t(R.string.series_style_novel_adapted), "10012")
             )
             SeriesType.VARIETY -> listOf(
-                option("全部风格", "-1"),
-                option("音乐", "10040"),
-                option("访谈", "10090"),
-                option("脱口秀", "10091"),
-                option("真人秀", "10092"),
-                option("选秀", "10094"),
-                option("美食", "10045"),
-                option("旅游", "10095"),
-                option("晚会", "10098"),
-                option("演唱会", "10096"),
-                option("情感", "10084"),
-                option("喜剧", "10051"),
-                option("亲子", "10097"),
-                option("文化", "10100"),
-                option("职场", "10048"),
-                option("萌宠", "10069"),
-                option("养成", "10099")
+                option(t(R.string.series_style_all), "-1"),
+                option(t(R.string.series_style_music), "10040"),
+                option(t(R.string.series_style_interview), "10090"),
+                option(t(R.string.series_style_talk_show), "10091"),
+                option(t(R.string.series_style_reality_show), "10092"),
+                option(t(R.string.series_style_talent_show), "10094"),
+                option(t(R.string.series_style_food), "10045"),
+                option(t(R.string.series_style_travel), "10095"),
+                option(t(R.string.series_style_gala), "10098"),
+                option(t(R.string.series_style_concert), "10096"),
+                option(t(R.string.series_style_emotion), "10084"),
+                option(t(R.string.series_style_comedy), "10051"),
+                option(t(R.string.series_style_parent_child), "10097"),
+                option(t(R.string.series_style_culture), "10100"),
+                option(t(R.string.series_style_workplace), "10048"),
+                option(t(R.string.series_style_cute_pets), "10069"),
+                option(t(R.string.series_style_nurture), "10099")
             )
             else -> listOf(
-                option("全部风格", "-1"),
-                option("历史", "10033"),
-                option("美食", "10045"),
-                option("人文", "10065"),
-                option("科技", "10066"),
-                option("探险", "10067"),
-                option("宇宙", "10068"),
-                option("萌宠", "10069"),
-                option("社会", "10070"),
-                option("动物", "10071"),
-                option("自然", "10072"),
-                option("医疗", "10073"),
-                option("军事", "10074"),
-                option("灾难", "10064"),
-                option("罪案", "10075"),
-                option("神秘", "10076"),
-                option("旅行", "10077"),
-                option("运动", "10038"),
-                option("电影", "-10")
+                option(t(R.string.series_style_all), "-1"),
+                option(t(R.string.series_style_history), "10033"),
+                option(t(R.string.series_style_food), "10045"),
+                option(t(R.string.series_style_humanities), "10065"),
+                option(t(R.string.series_style_technology), "10066"),
+                option(t(R.string.series_style_exploration), "10067"),
+                option(t(R.string.series_style_space), "10068"),
+                option(t(R.string.series_style_cute_pets), "10069"),
+                option(t(R.string.series_style_society), "10070"),
+                option(t(R.string.series_style_animal), "10071"),
+                option(t(R.string.series_style_nature), "10072"),
+                option(t(R.string.series_style_medical), "10073"),
+                option(t(R.string.series_style_military), "10074"),
+                option(t(R.string.series_style_disaster), "10064"),
+                option(t(R.string.series_style_crime_case), "10075"),
+                option(t(R.string.series_style_mysterious), "10076"),
+                option(t(R.string.series_style_trip), "10077"),
+                option(t(R.string.series_style_sports), "10038"),
+                option(t(R.string.series_style_movie), "-10")
             )
         }
     }
 
-    private fun createOrderOptions(seasonType: Int): List<AllSeriesFilterOption> {
+    private fun createOrderOptions(context: Context, seasonType: Int): List<AllSeriesFilterOption> {
+        fun t(resId: Int): String = context.getString(resId)
         return when (seasonType) {
             SeriesType.ANIME, SeriesType.CHINA_ANIME -> listOf(
-                option("追番人数", "3"),
-                option("最近更新", "0"),
-                option("最高评分", "4"),
-                option("播放数量", "2"),
-                option("开播时间", "5")
+                option(t(R.string.series_order_follow_count), "3"),
+                option(t(R.string.series_order_recent_update), "0"),
+                option(t(R.string.series_order_highest_rating), "4"),
+                option(t(R.string.series_order_play_count), "2"),
+                option(t(R.string.series_order_air_date), "5")
             )
             SeriesType.VARIETY -> listOf(
-                option("播放数量", "2"),
-                option("最近更新", "0"),
-                option("最新上映", "6"),
-                option("最高评分", "4"),
-                option("弹幕数量", "1")
+                option(t(R.string.series_order_play_count), "2"),
+                option(t(R.string.series_order_recent_update), "0"),
+                option(t(R.string.series_order_newest_release), "6"),
+                option(t(R.string.series_order_highest_rating), "4"),
+                option(t(R.string.series_order_danmaku_count), "1")
             )
             SeriesType.MOVIE -> listOf(
-                option("播放数量", "2"),
-                option("最近更新", "0"),
-                option("最新上映", "6"),
-                option("最高评分", "4")
+                option(t(R.string.series_order_play_count), "2"),
+                option(t(R.string.series_order_recent_update), "0"),
+                option(t(R.string.series_order_newest_release), "6"),
+                option(t(R.string.series_order_highest_rating), "4")
             )
             SeriesType.DRAMA -> listOf(
-                option("播放数量", "2"),
-                option("最近更新", "0"),
-                option("弹幕数量", "1"),
-                option("追剧人数", "3"),
-                option("最高评分", "4")
+                option(t(R.string.series_order_play_count), "2"),
+                option(t(R.string.series_order_recent_update), "0"),
+                option(t(R.string.series_order_danmaku_count), "1"),
+                option(t(R.string.series_order_drama_follow_count), "3"),
+                option(t(R.string.series_order_highest_rating), "4")
             )
             SeriesType.DOCUMENTARY -> listOf(
-                option("播放数量", "2"),
-                option("最高评分", "4"),
-                option("最近更新", "0"),
-                option("最新上映", "6"),
-                option("弹幕数量", "1")
+                option(t(R.string.series_order_play_count), "2"),
+                option(t(R.string.series_order_highest_rating), "4"),
+                option(t(R.string.series_order_recent_update), "0"),
+                option(t(R.string.series_order_newest_release), "6"),
+                option(t(R.string.series_order_danmaku_count), "1")
             )
-            else -> listOf(option("综合排序", "-1"))
+            else -> listOf(option(t(R.string.series_order_default), "-1"))
         }
     }
 
-    private fun createStatusOptions(): List<AllSeriesFilterOption> {
+    private fun createStatusOptions(context: Context): List<AllSeriesFilterOption> {
         return listOf(
-            option("全部状态", "-1"),
-            option("完结", "1"),
-            option("连载", "0")
+            option(context.getString(R.string.series_status_all), "-1"),
+            option(context.getString(R.string.series_status_finished), "1"),
+            option(context.getString(R.string.series_status_ongoing), "0")
         )
     }
 
-    private fun createPayTypeOptions(): List<AllSeriesFilterOption> {
+    private fun createPayTypeOptions(context: Context): List<AllSeriesFilterOption> {
         return listOf(
-            option("全部付费类型", "-1"),
-            option("免费", "1"),
-            option("付费", "2,6"),
-            option("大会员", "4,6")
+            option(context.getString(R.string.series_pay_all), "-1"),
+            option(context.getString(R.string.series_pay_free), "1"),
+            option(context.getString(R.string.series_pay_paid), "2,6"),
+            option(context.getString(R.string.series_pay_vip), "4,6")
         )
     }
 
-    private fun createVersionTypeOptions(): List<AllSeriesFilterOption> {
+    private fun createVersionTypeOptions(context: Context): List<AllSeriesFilterOption> {
         return listOf(
-            option("全部类型", "-1"),
-            option("正片", "1"),
-            option("电影", "2"),
-            option("其他", "3")
+            option(context.getString(R.string.series_filter_version_all), "-1"),
+            option(context.getString(R.string.series_filter_version_main), "1"),
+            option(context.getString(R.string.series_style_movie), "2"),
+            option(context.getString(R.string.series_filter_version_other), "3")
         )
     }
 
-    private fun createSpokenLanguageOptions(): List<AllSeriesFilterOption> {
+    private fun createSpokenLanguageOptions(context: Context): List<AllSeriesFilterOption> {
         return listOf(
-            option("全部配音", "-1"),
-            option("原声", "1"),
-            option("中文配音", "2")
+            option(context.getString(R.string.series_filter_spoken_all), "-1"),
+            option(context.getString(R.string.series_filter_spoken_original), "1"),
+            option(context.getString(R.string.series_filter_spoken_chinese), "2")
         )
     }
 
-    private fun createSeasonMonthOptions(): List<AllSeriesFilterOption> {
+    private fun createSeasonMonthOptions(context: Context): List<AllSeriesFilterOption> {
+        fun month(month: Int): String = context.getString(R.string.series_filter_month_format, month)
         return listOf(
-            option("全部季度", "-1"),
-            option("1月", "1"),
-            option("4月", "4"),
-            option("7月", "7"),
-            option("10月", "10")
+            option(context.getString(R.string.series_filter_season_all), "-1"),
+            option(month(1), "1"),
+            option(month(4), "4"),
+            option(month(7), "7"),
+            option(month(10), "10")
         )
     }
 
-    private fun createProducerOptions(): List<AllSeriesFilterOption> {
+    private fun createProducerOptions(context: Context): List<AllSeriesFilterOption> {
         return listOf(
-            option("全部出品", "-1"),
+            option(context.getString(R.string.series_filter_producer_all), "-1"),
             option("CCTV", "1"),
             option("BBC", "2"),
             option("Discovery", "3"),
-            option("国家地理", "4"),
+            option(context.getString(R.string.series_filter_producer_national_geographic), "4"),
             option("NHK", "5"),
-            option("历史频道", "7"),
-            option("卫视", "8"),
-            option("自制", "9"),
+            option(context.getString(R.string.series_filter_producer_history_channel), "7"),
+            option(context.getString(R.string.series_filter_producer_satellite_tv), "8"),
+            option(context.getString(R.string.series_filter_producer_self_produced), "9"),
             option("ITV", "10"),
             option("SKY", "11"),
             option("ZDF", "12"),
-            option("合作机构", "13"),
-            option("国内其他", "14"),
-            option("国外其他", "15")
+            option(context.getString(R.string.series_filter_producer_partner), "13"),
+            option(context.getString(R.string.series_filter_producer_other_domestic), "14"),
+            option(context.getString(R.string.series_filter_producer_other_overseas), "15")
         )
     }
 
-    private fun createReleaseDateOptions(): List<AllSeriesFilterOption> {
+    private fun createReleaseDateOptions(context: Context): List<AllSeriesFilterOption> {
+        fun decade(year: Int): String = context.getString(R.string.series_filter_year_decade_format, year)
         return listOf(
-            option("全部年份", "-1"),
+            option(context.getString(R.string.series_filter_year_all), "-1"),
             option("2026", "[2026-01-01 00:00:00,2027-01-01 00:00:00)"),
             option("2025", "[2025-01-01 00:00:00,2026-01-01 00:00:00)"),
             option("2024", "[2024-01-01 00:00:00,2025-01-01 00:00:00)"),
@@ -686,15 +691,16 @@ object AllSeriesFilterFactory {
             option("2015-2010", "[2010-01-01 00:00:00,2016-01-01 00:00:00)"),
             option("2009-2005", "[2005-01-01 00:00:00,2010-01-01 00:00:00)"),
             option("2004-2000", "[2000-01-01 00:00:00,2005-01-01 00:00:00)"),
-            option("90年代", "[1990-01-01 00:00:00,2000-01-01 00:00:00)"),
-            option("80年代", "[1980-01-01 00:00:00,1990-01-01 00:00:00)"),
-            option("更早", "[,1980-01-01 00:00:00)")
+            option(decade(90), "[1990-01-01 00:00:00,2000-01-01 00:00:00)"),
+            option(decade(80), "[1980-01-01 00:00:00,1990-01-01 00:00:00)"),
+            option(context.getString(R.string.series_filter_year_earlier), "[,1980-01-01 00:00:00)")
         )
     }
 
-    private fun createAnimeYearOptions(): List<AllSeriesFilterOption> {
+    private fun createAnimeYearOptions(context: Context): List<AllSeriesFilterOption> {
+        fun decade(year: Int): String = context.getString(R.string.series_filter_year_decade_format, year)
         return listOf(
-            option("全部年份", "-1"),
+            option(context.getString(R.string.series_filter_year_all), "-1"),
             option("2026", "[2026,2027)"),
             option("2025", "[2025,2026)"),
             option("2024", "[2024,2025)"),
@@ -710,9 +716,9 @@ object AllSeriesFilterFactory {
             option("2014-2010", "[2010,2015)"),
             option("2009-2005", "[2005,2010)"),
             option("2004-2000", "[2000,2005)"),
-            option("90年代", "[1990,2000)"),
-            option("80年代", "[1980,1990)"),
-            option("更早", "[,1980)")
+            option(decade(90), "[1990,2000)"),
+            option(decade(80), "[1980,1990)"),
+            option(context.getString(R.string.series_filter_year_earlier), "[,1980)")
         )
     }
 

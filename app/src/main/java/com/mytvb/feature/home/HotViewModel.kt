@@ -1,6 +1,7 @@
 package com.mytvb.feature.home
 
 import android.content.Context
+import com.mytvb.R
 import com.mytvb.model.video.VideoModel
 
 class HotViewModel(
@@ -29,7 +30,7 @@ class HotViewModel(
     }
 
     override fun errorMessage(throwable: Throwable): String {
-        return throwable.message ?: "热门加载失败"
+        return throwable.message ?: appContext.getString(R.string.home_hot_load_failed)
     }
 
     override suspend fun writeCache(items: List<VideoModel>) {

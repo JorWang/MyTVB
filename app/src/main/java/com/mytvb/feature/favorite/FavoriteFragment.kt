@@ -305,7 +305,11 @@ class FavoriteFragment : BaseFragment<FragmentFavoriteBinding>(), MeTabPage {
                 binding.tvEmpty.text = e.message ?: getString(R.string.net_error)
                 binding.recyclerViewFavorite.visibility = View.GONE
                 requestFallbackFocus()
-                Toast.makeText(requireContext(), "加载失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.load_failed_format, e.message),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }

@@ -2,6 +2,7 @@ package com.mytvb.feature.home
 
 import android.content.Context
 import android.os.SystemClock
+import com.mytvb.R
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.model.video.VideoModel
 import kotlinx.coroutines.CoroutineStart
@@ -70,7 +71,7 @@ class RecommendViewModel(
     }
 
     override fun errorMessage(throwable: Throwable): String {
-        return throwable.message ?: "推荐加载失败"
+        return throwable.message ?: appContext.getString(R.string.home_recommend_load_failed)
     }
 
     override suspend fun writeCache(items: List<VideoModel>) {

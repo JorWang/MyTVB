@@ -70,8 +70,13 @@ class SeriesDetailViewModel(
                     }
                 },
                 onFailure = { e ->
-                    _error.value = e.message ?: "加载番剧详情失败"
-                    _messages.tryEmit(UiMessage.Text(_error.value.orEmpty()))
+                    val message = e.message
+                    _error.value = message
+                    if (message != null) {
+                        _messages.tryEmit(UiMessage.Text(message))
+                    } else {
+                        _messages.tryEmit(UiMessage.Res(R.string.series_detail_load_failed))
+                    }
                 }
             )
             
@@ -127,8 +132,13 @@ class SeriesDetailViewModel(
                 },
                 onFailure = { e ->
                     AppLog.e("SeriesDetail", "toggleFollow failed: ${e.message}")
-                    _error.value = e.message ?: "操作失败"
-                    _messages.emit(UiMessage.Text(_error.value.orEmpty()))
+                    val message = e.message
+                    _error.value = message
+                    if (message != null) {
+                        _messages.emit(UiMessage.Text(message))
+                    } else {
+                        _messages.emit(UiMessage.Res(R.string.toast_operation_failed))
+                    }
                 }
             )
             isFollowActionRunning = false

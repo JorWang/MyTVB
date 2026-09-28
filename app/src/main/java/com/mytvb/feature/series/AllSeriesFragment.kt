@@ -145,7 +145,7 @@ class AllSeriesFragment : BaseFragment<FragmentAllSeriesBinding>(), OnBackPresse
         binding.textTopTitle.text = entryTitle.ifBlank {
             getString(
                 R.string.all_series_title_format,
-                SeriesType.titleOf(seasonType)
+                getString(SeriesType.titleResOf(seasonType))
             )
         }
         binding.buttonBack1.setOnClickListener {

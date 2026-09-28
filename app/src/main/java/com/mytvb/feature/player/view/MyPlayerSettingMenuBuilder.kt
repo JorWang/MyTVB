@@ -8,6 +8,7 @@ import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import com.mytvb.R
+import com.mytvb.core.common.ext.localizedSettingLabel
 import com.mytvb.feature.player.isLikelyAiSubtitleTrack
 import com.mytvb.feature.player.settings.AfterPlayMode
 import com.mytvb.feature.player.LiveLineInfo
@@ -67,7 +68,7 @@ internal class MyPlayerSettingMenuBuilder(
             PlayerSettingRow.Item(
                 id = MyPlayerSettingView.ITEM_VIDEO_QUALITY,
                 title = context.getString(R.string.video_quality),
-                value = state.currentVideoQuality?.name ?: "1080P",
+                value = state.currentVideoQuality?.displayName(context) ?: "1080P",
                 iconRes = R.drawable.ic_video_play_count
             ),
             PlayerSettingRow.Item(
@@ -78,7 +79,7 @@ internal class MyPlayerSettingMenuBuilder(
             ),
             PlayerSettingRow.Item(
                 id = MyPlayerSettingView.ITEM_AFTER_PLAY,
-                title = "播放完成后",
+                title = context.getString(R.string.after_play),
                 value = afterPlayModeLabel(state.afterPlayMode),
                 iconRes = R.drawable.ic_after_play
             ),
@@ -115,7 +116,7 @@ internal class MyPlayerSettingMenuBuilder(
             PlayerSettingRow.Item(
                 id = MyPlayerSettingView.ITEM_AUDIO_QUALITY,
                 title = context.getString(R.string.audioTrack),
-                value = state.currentAudioQuality?.name ?: AudioQuality.AUDIO_192K.name,
+                value = state.currentAudioQuality?.displayName(context) ?: AudioQuality.AUDIO_192K.name,
                 iconRes = R.drawable.exo_ic_audiotrack
             )
         )
@@ -130,7 +131,7 @@ internal class MyPlayerSettingMenuBuilder(
         rows += state.videoQualities.mapIndexed { index, quality ->
             PlayerSettingRow.Item(
                 id = index,
-                title = quality.name,
+                title = quality.displayName(context),
                 value = quality.resolution,
                 checked = quality.id == state.currentVideoQuality?.id,
                 showArrow = false
@@ -181,7 +182,7 @@ internal class MyPlayerSettingMenuBuilder(
      * 小号、常规字重、次要色，与官方的行内徽标风格接近；人工/CC 字幕不加。
      */
     private fun subtitleTrackTitle(subtitle: SubtitleInfoModel): CharSequence {
-        val name = subtitle.lanDoc.ifBlank { subtitle.lan }.ifBlank { "未知" }
+        val name = subtitle.lanDoc.ifBlank { subtitle.lan }.ifBlank { context.getString(R.string.player_subtitle_unknown) }
         if (!isLikelyAiSubtitleTrack(subtitle)) return name
         val spannable = SpannableStringBuilder(name)
         val markStart = spannable.length
@@ -234,7 +235,7 @@ internal class MyPlayerSettingMenuBuilder(
         rows += state.audioQualities.mapIndexed { index, quality ->
             PlayerSettingRow.Item(
                 id = index,
-                title = quality.name,
+                title = quality.displayName(context),
                 checked = quality.id == state.currentAudioQuality?.id,
                 showArrow = false
             )
@@ -329,7 +330,7 @@ internal class MyPlayerSettingMenuBuilder(
             MyPlayerSettingView.ITEM_DM_AREA -> buildChoiceMenu(
                 menuKey = MyPlayerSettingView.ITEM_DM_AREA,
                 title = context.getString(R.string.dm_screen_area),
-                values = MyPlayerSettingView.DM_AREA_VALUES.map { it.showName },
+                values = MyPlayerSettingView.DM_AREA_VALUES.map { context.localizedSettingLabel(it.showName) },
                 selectedIndex = MyPlayerSettingView.DM_AREA_VALUES.indexOfFirst { it.area == state.dmArea }.coerceAtLeast(0)
             )
 
@@ -419,17 +420,19 @@ internal class MyPlayerSettingMenuBuilder(
         currentSubtitlePosition: Int
     ): String {
         return when {
-            subtitles.isEmpty() -> "不可用"
+            subtitles.isEmpty() -> context.getString(R.string.player_subtitle_unavailable)
             currentSubtitlePosition !in subtitles.indices -> context.getString(R.string.off)
             else -> {
-                val track = subtitles.getOrNull(currentSubtitlePosition) ?: return "不可用"
+                val track = subtitles.getOrNull(currentSubtitlePosition)
+                    ?: return context.getString(R.string.player_subtitle_unavailable)
                 if (isLikelyAiSubtitleTrack(track)) "${track.lanDoc} AI" else track.lanDoc
             }
         }
     }
 
     private fun getAreaDisplay(area: Int): String {
-        return DmScreenArea.entries.firstOrNull { it.area == area }?.showName ?: DmScreenArea.Full.showName
+        return DmScreenArea.entries.firstOrNull { it.area == area }?.showName?.let { context.localizedSettingLabel(it) }
+            ?: context.localizedSettingLabel(DmScreenArea.Full.showName)
     }
 
     private fun formatSpeed(speed: Float): String {
@@ -448,18 +451,19 @@ internal class MyPlayerSettingMenuBuilder(
         }
     }
 
-    private fun Boolean.toOpenCloseLabel(): String = if (this) "开" else "关"
+    private fun Boolean.toOpenCloseLabel(): String =
+        if (this) context.getString(R.string.on) else context.getString(R.string.off)
 
     internal val AFTER_PLAY_OPTIONS = listOf(
-        AfterPlayMode.NOTHING to "什么都不做",
-        AfterPlayMode.RECOMMEND to "播推荐视频",
-        AfterPlayMode.PLAY_QUEUE to "播列表中的下一个",
-        AfterPlayMode.NEXT_EPISODE to "播放合集中的下一个"
+        AfterPlayMode.NOTHING to context.getString(R.string.setting_after_play_none),
+        AfterPlayMode.RECOMMEND to context.getString(R.string.setting_after_play_recommend),
+        AfterPlayMode.PLAY_QUEUE to context.getString(R.string.setting_after_play_next_in_list),
+        AfterPlayMode.NEXT_EPISODE to context.getString(R.string.setting_after_play_next_in_collection)
     )
 
     fun buildAfterPlayMenu(state: PanelState): List<PlayerSettingRow> {
         val rows = mutableListOf<PlayerSettingRow>(
-            PlayerSettingRow.Header(title = "播放完成后")
+            PlayerSettingRow.Header(title = context.getString(R.string.after_play))
         )
         val selectedIndex = AFTER_PLAY_OPTIONS.indexOfFirst { it.first == state.afterPlayMode }.coerceAtLeast(0)
         rows += AFTER_PLAY_OPTIONS.mapIndexed { index, option ->
@@ -474,6 +478,7 @@ internal class MyPlayerSettingMenuBuilder(
     }
 
     private fun afterPlayModeLabel(mode: AfterPlayMode): String {
-        return AFTER_PLAY_OPTIONS.firstOrNull { it.first == mode }?.second ?: "什么都不做"
+        return AFTER_PLAY_OPTIONS.firstOrNull { it.first == mode }?.second
+            ?: context.getString(R.string.setting_after_play_none)
     }
 }

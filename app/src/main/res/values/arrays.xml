@@ -23,15 +23,4 @@
         <item>1</item>
         <item>2</item>
     </string-array>
-
-    <string-array name="themes">
-        <item>自动</item>
-        <item>黑色</item>
-        <item>白色</item>
-        <item>经典主题</item>
-        <item>粉色</item>
-        <item>蓝色</item>
-        <item>紫色</item>
-        <item>红色</item>
-    </string-array>
 </resources>

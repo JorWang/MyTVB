@@ -1,7 +1,9 @@
 package com.mytvb.feature.player
 
+import android.content.Context
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
+import com.mytvb.R
 import com.mytvb.model.episode.EpisodeModel
 import com.mytvb.model.episode.EpisodeStatModel
 import com.mytvb.model.series.EpisodesDetailModel
@@ -15,7 +17,8 @@ import com.mytvb.network.api.ApiService
  */
 @OptIn(UnstableApi::class)
 class VideoPlayerEpisodeCatalogBuilder(
-    private val apiService: ApiService
+    private val apiService: ApiService,
+    private val context: Context
 ) {
 
     suspend fun buildUgcEpisodes(
@@ -134,7 +137,7 @@ class VideoPlayerEpisodeCatalogBuilder(
             cid = cid,
             title = part.takeIf { it.isNotBlank() } ?: "P${page.takeIf { it > 0 } ?: index + 1}",
             panelTitle = part.takeIf { it.isNotBlank() } ?: "P${page.takeIf { it > 0 } ?: index + 1}",
-            subtitle = "第 ${page.takeIf { it > 0 } ?: index + 1} P",
+            subtitle = context.getString(R.string.player_page_p_format, page.takeIf { it > 0 } ?: index + 1),
             cover = view.pic,
             aid = view.aid,
             bvid = view.bvid,
@@ -243,7 +246,7 @@ class VideoPlayerEpisodeCatalogBuilder(
                 cid = page.cid.takeIf { it > 0L } ?: archiveCid,
                 title = displayTitle,
                 panelTitle = displayTitle,
-                subtitle = "共 ${candidatePages.size} P",
+                subtitle = context.getString(R.string.player_total_p_format, candidatePages.size),
                 cover = archiveCover,
                 aid = archiveAid,
                 bvid = archiveBvid,

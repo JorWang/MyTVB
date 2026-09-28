@@ -2,6 +2,8 @@ package com.mytvb.feature.category
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mytvb.MyBLBLApplication
+import com.mytvb.R
 import com.mytvb.model.video.VideoModel
 import com.mytvb.repository.VideoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -76,10 +78,11 @@ class CategoryViewModel(
 
     private fun normalizeErrorMessage(message: String?): String {
         val raw = message.orEmpty().trim()
+        val fallback = MyBLBLApplication.instance.getString(R.string.category_load_failed)
         return if (raw == "-352") {
-            "分类内容加载失败，请稍后重试"
+            fallback
         } else {
-            raw.ifBlank { "分类内容加载失败，请稍后重试" }
+            raw.ifBlank { fallback }
         }
     }
 

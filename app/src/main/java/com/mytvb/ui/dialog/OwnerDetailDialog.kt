@@ -259,7 +259,7 @@ class OwnerDetailDialog(
                 binding.progressBar.isVisible = false
                 isLoading = false
                 currentPage--
-                toast(it.message ?: "加载失败")
+                toast(it.message ?: context.getString(R.string.dialog_load_failed))
             }
         }
     }
@@ -376,7 +376,7 @@ class OwnerDetailDialog(
 
     private fun toggleFollow() {
         if (sessionGateway.requireCsrfToken() == null) {
-            toast("登录凭据异常，请稍后重试")
+            toast(context.getString(R.string.dialog_credential_error_retry_later))
             return
         }
         val action = if (isFollowing()) 2 else 1
@@ -390,14 +390,17 @@ class OwnerDetailDialog(
                                 attribute = relationAttribute
                             )
                         )
-                        toast(if (action == 1) "关注成功" else "已取消关注")
+                        toast(
+                            if (action == 1) context.getString(R.string.dialog_follow_success)
+                            else context.getString(R.string.dialog_unfollowed)
+                        )
                     } else {
                         toast(response.errorMessage)
                     }
                 }
                 .onFailure {
                     AppLog.e("OwnerDetailDialog", "toggleFollow failed", it)
-                    toast(it.message ?: "操作失败")
+                    toast(it.message ?: context.getString(R.string.dialog_action_failed))
                 }
         }
     }

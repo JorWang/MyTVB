@@ -4,6 +4,7 @@ package com.mytvb.feature.player
 
 import com.mytvb.core.common.json.GsonHolder
 import android.content.Context
+import com.mytvb.R
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.Flow
@@ -385,7 +386,7 @@ class VideoPlayerViewModel(
     private var currentDashSession: VideoPlaybackSession? = null
     private val qualityPolicy = VideoPlayerQualityPolicy()
     // Keeps episode-list construction and PGC header mapping out of playback request flow.
-    private val episodeCatalogBuilder = VideoPlayerEpisodeCatalogBuilder(apiService)
+    private val episodeCatalogBuilder = VideoPlayerEpisodeCatalogBuilder(apiService, appContext)
     // Encapsulates PGC/UGC play-info retries and WBI-dependent requests away from UI state changes.
     private val playInfoGateway = VideoPlayerPlayInfoGateway(
         apiService = apiService,
@@ -593,6 +594,7 @@ class VideoPlayerViewModel(
         qualityPolicy = qualityPolicy,
         playInfoGateway = playInfoGateway,
         scope = viewModelScope,
+        appContext = appContext,
         context = FallbackContextImpl()
     )
 
@@ -966,7 +968,7 @@ class VideoPlayerViewModel(
                 )
             } catch (e: Exception) {
                 AppLog.e(TAG, "loadVideoInfo exception: ${e.message}", e)
-                _error.value = e.message ?: "播放器初始化失败"
+                _error.value = e.message ?: appContext.getString(R.string.player_error_init_failed)
             } finally {
                 _isLoading.value = false
             }
@@ -1071,7 +1073,7 @@ class VideoPlayerViewModel(
         val targetSeasonId = video.playbackSeasonId.takeIf { it > 0L }
         val targetEpId = video.playbackEpId.takeIf { it > 0L }
         if (targetAid == null && targetBvid.isNullOrBlank() && targetEpId == null && targetSeasonId == null) {
-            _error.value = "相关推荐缺少视频标识"
+            _error.value = appContext.getString(R.string.player_error_related_missing_id)
             return
         }
         reportPlaybackHeartbeat()
@@ -1291,7 +1293,7 @@ class VideoPlayerViewModel(
         }
         continuationSessions.clear()
         val identity = intent.target.toPlayRequestIdentity() ?: run {
-            _error.value = "连播目标缺少视频标识"
+            _error.value = appContext.getString(R.string.player_error_continuation_missing_id)
             AppLog.w(TAG, "continuation_play_failed id=$sessionId reason=invalid_identity")
             return
         }
@@ -1500,7 +1502,7 @@ class VideoPlayerViewModel(
     private fun rebuildPlayback() {
         val playInfo = currentPlayInfo ?: return
         val selectionSnapshot = resolveSelectionSnapshot(playInfo) ?: run {
-            _error.value = "当前清晰度/音轨组合不可播放"
+            _error.value = appContext.getString(R.string.player_error_quality_audio_unplayable)
             return
         }
 
@@ -1574,7 +1576,7 @@ class VideoPlayerViewModel(
             )
         } else null
         val mediaSource = dashMediaSource ?: progressiveSelection?.mediaSource ?: run {
-            _error.value = "当前清晰度/音轨组合不可播放"
+            _error.value = appContext.getString(R.string.player_error_quality_audio_unplayable)
             return
         }
         // progressive 兜底路径也需要接管 CDN state；DASH 路径已在上面回填。
@@ -1616,11 +1618,11 @@ class VideoPlayerViewModel(
     ) {
         val identity = currentPlayRequestIdentity()
         if (identity == null) {
-            _error.value = "CID 无效"
+            _error.value = appContext.getString(R.string.player_error_cid_invalid)
             return
         }
         if (!isPgcPlayback() && identity.bvid.isNullOrBlank()) {
-            _error.value = "BVID 无效"
+            _error.value = appContext.getString(R.string.player_error_bvid_invalid)
             return
         }
 
@@ -1641,13 +1643,13 @@ class VideoPlayerViewModel(
                     return@launch
                 }
                 if (resolvedPlayback == null) {
-                    _error.value = "播放地址请求失败"
+                    _error.value = appContext.getString(R.string.player_error_play_url_request_failed)
                     return@launch
                 }
                 applyPreparedPlayback(resolvedPlayback)
             } catch (e: Exception) {
                 AppLog.e(TAG, "loadPlayUrl exception: ${e.message}", e)
-                _error.value = e.message ?: "播放地址加载失败"
+                _error.value = e.message ?: appContext.getString(R.string.player_error_play_url_load_failed)
             } finally {
                 _isLoading.value = false
             }
@@ -1699,7 +1701,7 @@ class VideoPlayerViewModel(
                 TAG,
                 "loadPgcVideoInfo failure: code=${detailResponse.code}, message=${detailResponse.errorMessage}, seasonId=${seasonId ?: 0L}, epId=${epId ?: 0L}"
             )
-            _error.value = detailResponse.message.ifBlank { "番剧详情加载失败" }
+            _error.value = detailResponse.message.ifBlank { appContext.getString(R.string.player_error_bangumi_detail_failed) }
             return@coroutineScope
         }
 
@@ -1745,7 +1747,7 @@ class VideoPlayerViewModel(
 
 
         if (currentCid <= 0L) {
-            _error.value = "未找到可播放剧集"
+            _error.value = appContext.getString(R.string.player_error_no_playable_episode)
             return@coroutineScope
         }
 
@@ -2030,7 +2032,7 @@ class VideoPlayerViewModel(
                 TAG,
                 "loadUgcVideoInfo detail failure: code=${detailResponse.code}, message=${detailResponse.errorMessage}"
             )
-            _error.value = detailResponse.message.ifBlank { "视频详情加载失败" }
+            _error.value = detailResponse.message.ifBlank { appContext.getString(R.string.player_error_video_detail_failed) }
             return@coroutineScope
         }
 
@@ -2106,7 +2108,7 @@ class VideoPlayerViewModel(
         danmakuController.preloadViewIfNeeded(loadGeneration)
 
         if (currentCid <= 0L) {
-            _error.value = "未找到可播放分P"
+            _error.value = appContext.getString(R.string.player_error_no_playable_page)
             return@coroutineScope
         }
 
@@ -2360,11 +2362,11 @@ class VideoPlayerViewModel(
                         appSettings.putStringAsync("gaia_vgate_v_voucher", vVoucher)
                         appSettings.putStringAsync("gaia_vgate_v_voucher_saved_at_ms", System.currentTimeMillis().toString())
                         _riskControlVVoucher.value = vVoucher
-                        _error.value = "账号被风控，正在请求人机验证…"
+                        _error.value = appContext.getString(R.string.player_risk_control_requesting_verify)
                     }
                 } else if (response.isTryLookBypass) {
                     if (!suppressUiSignals) {
-                        _error.value = "账号被风控，已降级为试看模式"
+                        _error.value = appContext.getString(R.string.player_risk_control_try_look_fallback)
                         _riskControlTryLookBypass.value = true
                     }
                 }

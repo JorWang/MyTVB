@@ -69,7 +69,7 @@
         android:layout_marginTop="@dimen/px6"
         android:ellipsize="end"
         android:singleLine="true"
-        android:text="0粉丝 · 0个视频"
+        android:text="@string/cell_user_stat_placeholder"
         android:textColor="?android:attr/textColorSecondary"
         android:textSize="@dimen/px22"
         app:layout_constraintBottom_toTopOf="@id/text_sub"

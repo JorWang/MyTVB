@@ -19,6 +19,8 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDialog
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.mytvb.BuildConfig
@@ -46,6 +48,7 @@ import com.mytvb.feature.player.cache.PlayerMediaCache
 import com.mytvb.feature.player.settings.AudioBalanceSettings
 import com.mytvb.feature.player.sponsor.SponsorBlockRepository
 import com.mytvb.core.common.ext.normalizeDanmakuSmartFilterValue
+import com.mytvb.core.common.ext.localizedSettingLabel
 import com.mytvb.network.cookie.CookieManager
 import com.mytvb.ui.activity.MainActivity
 import com.mytvb.ui.activity.GaiaVgateActivity
@@ -131,9 +134,16 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         private const val KEY_AUDIO_BALANCE = "audio_balance"
         private val AUDIO_BALANCE_OPTIONS = arrayOf("关", "低", "中", "高")
         private const val KEY_SEAMLESS_QUALITY_SWITCH = "seamless_quality_switch"
-        private const val COMMON_POSITION_RISK_CONTROL = 6
-        private const val COMMON_POSITION_UI_TEXT_SIZE = 11
-        private const val COMMON_POSITION_CARD_SIZE = 12
+
+        /**
+         * 主题存储值数组（历史落盘格式为中文字面量，toLegacyTheme/toThemeName 依赖）。
+         * 不放 arrays.xml：资源数组会随语言目录被翻译，破坏存储格式。
+         */
+        private val THEME_OPTIONS = arrayOf("黑色", "白色", "经典主题", "粉色", "蓝色", "紫色", "红色")
+        private const val COMMON_POSITION_UI_LANGUAGE = 5
+        private const val COMMON_POSITION_RISK_CONTROL = 7
+        private const val COMMON_POSITION_UI_TEXT_SIZE = 12
+        private const val COMMON_POSITION_CARD_SIZE = 13
         private val DM_SMART_FILTER_OPTIONS = arrayOf("关", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
 
         /**
@@ -141,9 +151,12 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
          * 1 分钟仅供功能自测，正式使用从 10 分钟起。
          */
         private val TEEN_TIME_OPTIONS = arrayOf("0", "1") + (10..120 step 10).map { it.toString() }
-        private val TEEN_TIME_DISPLAY = TEEN_TIME_OPTIONS.copyOf().also { it[0] = "不限制" }
 
         private val HOME_START_PAGE_OPTIONS = arrayOf("推荐", "热门", "番剧", "影视", "动态")
+
+        /** 界面语言选项：tag 空串=跟随系统；语言名固定显示各自语言原文（业界惯例，不随 UI 语言翻译）。 */
+        private val UI_LANGUAGE_TAGS = arrayOf("", "zh-CN", "zh-TW", "en")
+        private val UI_LANGUAGE_NAMES = arrayOf("简体中文", "繁體中文（台灣）", "English")
     }
 
     private lateinit var commonSettings: MutableList<SettingModel>
@@ -209,88 +222,97 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         updateRiskControlStatus()
     }
 
+    /** 构造设置项：value=稳定存储值，info=本地化显示文案。 */
+    private fun storedSetting(title: String, stored: String): SettingModel =
+        SettingModel(title, labelOf(stored), stored)
+
+    /** Fragment 内便捷入口：localizedSettingLabel 是 Context 扩展。 */
+    private fun labelOf(stored: String): String =
+        requireContext().localizedSettingLabel(stored)
+
     private fun initSettings() {
         commonSettings = mutableListOf(
             SettingModel(getString(R.string.clear_cache), "0.0kb"),
-            SettingModel(getString(R.string.cache_limit), "200 MB"),
-            SettingModel(getString(R.string.default_start_page), "热门"),
-            SettingModel(getString(R.string.image_quality), "中尺寸"),
-            SettingModel(getString(R.string.theme), "黑色"),
-            SettingModel(getString(R.string.live_entry), "关"),
-            SettingModel(getString(R.string.risk_control_verify), "无"),
-            SettingModel(getString(R.string.show_video_detail_page), "关"),
-            SettingModel(getString(R.string.give_coin_number), "2"),
-            SettingModel(getString(R.string.ipv4_only), "开"),
-            SettingModel(getString(R.string.douyin_mode), "关"),
-            SettingModel(getString(R.string.ui_text_size), "标准"),
-            SettingModel(getString(R.string.ui_card_size), "标准")
+            storedSetting(getString(R.string.cache_limit), "200 MB"),
+            storedSetting(getString(R.string.default_start_page), "热门"),
+            storedSetting(getString(R.string.image_quality), "中尺寸"),
+            storedSetting(getString(R.string.theme), "黑色"),
+            SettingModel(getString(R.string.ui_language), currentLanguageDisplay()),
+            storedSetting(getString(R.string.live_entry), "关"),
+            SettingModel(getString(R.string.risk_control_verify), getString(R.string.risk_status_none)),
+            storedSetting(getString(R.string.show_video_detail_page), "关"),
+            storedSetting(getString(R.string.give_coin_number), "2"),
+            storedSetting(getString(R.string.ipv4_only), "开"),
+            storedSetting(getString(R.string.douyin_mode), "关"),
+            storedSetting(getString(R.string.ui_text_size), "标准"),
+            storedSetting(getString(R.string.ui_card_size), "标准")
         )
 
         // 青少年模式分类：青少年保护开关 + 单次观看时长 + 休息时长 + 公益广告开关 + 公益广告间隔
         teenSettings = mutableListOf(
-            SettingModel(getString(R.string.minor_protection), "开"),
-            SettingModel(getString(R.string.watch_time_limit), "不限制"),
-            SettingModel(getString(R.string.rest_time_limit), "不限制"),
-            SettingModel(getString(R.string.psas_enabled), "关"),
-            SettingModel(getString(R.string.psas_interval), "20分钟")
+            storedSetting(getString(R.string.minor_protection), "开"),
+            SettingModel(getString(R.string.watch_time_limit), getString(R.string.setting_value_unlimited)),
+            SettingModel(getString(R.string.rest_time_limit), getString(R.string.setting_value_unlimited)),
+            storedSetting(getString(R.string.psas_enabled), "关"),
+            SettingModel(getString(R.string.psas_interval), getString(R.string.setting_minutes_format, 20))
         )
 
         // 电视直播分类：CCTV 直播开关（从通用设置迁移）+ X5 内核替换
         tvSettings = mutableListOf(
-            SettingModel(getString(R.string.cctv_live), "关"),
-            SettingModel("X5内核替换", "未安装")
+            storedSetting(getString(R.string.cctv_live), "关"),
+            SettingModel(getString(R.string.x5_core_replace), getString(R.string.x5_status_not_installed))
         )
 
         // 播放设置项的顺序即 handlePlayerSettingClick / restoreSavedSettings 里
         // 硬编码下标的来源，调整顺序时两处必须同步。
         playerSettings = mutableListOf(
-            SettingModel(getString(R.string.default_video_quality), "1080P"),      // 0
-            SettingModel(getString(R.string.default_audio_track), "192kbps"),      // 1
-            SettingModel(getString(R.string.default_play_speed), "1.0"),           // 2
-            SettingModel(getString(R.string.music_zone_normal_speed), "关"),        // 3 与倍速同组
-            SettingModel(getString(R.string.after_play), "播推荐视频"),             // 4
-            SettingModel(getString(R.string.play_finish_exit_player), "开"),        // 5
-            SettingModel(getString(R.string.video_codec), "HEVC"),                 // 6
-            SettingModel(getString(R.string.show_subtitle_default), "自动字幕"),     // 7
-            SettingModel(getString(R.string.subtitle_text_size), "45"),            // 8
-            SettingModel(getString(R.string.show_playback_rate), "关"),            // 9 常驻显示播放倍率
-            SettingModel(getString(R.string.show_play_speed_button), "关"),        // 10 控制栏倍速按键
-            SettingModel(getString(R.string.show_debug), "关"),                    // 11
-            SettingModel(getString(R.string.show_bottom_progress_bar), "关"),       // 12
-            SettingModel(getString(R.string.show_next_previous), "关"),            // 13
-            SettingModel(getString(R.string.resume_playback), "开"),               // 14
-            SettingModel("空降助手", "关"),                                        // 15
-            SettingModel("音量均衡", "关"),                                        // 16
-            SettingModel("无缝切换清晰度", "关")                                    // 17
+            storedSetting(getString(R.string.default_video_quality), "1080P"),      // 0
+            storedSetting(getString(R.string.default_audio_track), "192kbps"),      // 1
+            storedSetting(getString(R.string.default_play_speed), "1.0"),           // 2
+            storedSetting(getString(R.string.music_zone_normal_speed), "关"),        // 3 与倍速同组
+            storedSetting(getString(R.string.after_play), "播推荐视频"),             // 4
+            storedSetting(getString(R.string.play_finish_exit_player), "开"),        // 5
+            storedSetting(getString(R.string.video_codec), "HEVC"),                 // 6
+            storedSetting(getString(R.string.show_subtitle_default), "自动字幕"),     // 7
+            storedSetting(getString(R.string.subtitle_text_size), "45"),            // 8
+            storedSetting(getString(R.string.show_playback_rate), "关"),            // 9 常驻显示播放倍率
+            storedSetting(getString(R.string.show_play_speed_button), "关"),        // 10 控制栏倍速按键
+            storedSetting(getString(R.string.show_debug), "关"),                    // 11
+            storedSetting(getString(R.string.show_bottom_progress_bar), "关"),       // 12
+            storedSetting(getString(R.string.show_next_previous), "关"),            // 13
+            storedSetting(getString(R.string.resume_playback), "开"),               // 14
+            storedSetting(getString(R.string.sponsor_block), "关"),                  // 15
+            storedSetting(getString(R.string.audio_balance), "关"),                  // 16
+            storedSetting(getString(R.string.seamless_quality_switch), "关")         // 17
         )
 
         dmSettings = mutableListOf(
-            SettingModel(getString(R.string.dm_switch), "开"),
-            SettingModel(getString(R.string.dm_alpha), "1.0"),
-            SettingModel(getString(R.string.dm_text_size), "40"),
-            SettingModel(getString(R.string.dm_screen_area), "1/2"),
-            SettingModel(getString(R.string.dm_speed), "4"),
-            SettingModel(getString(R.string.dm_track_spacing), "标准"),
-            SettingModel(getString(R.string.dm_allow_top), "关"),
-            SettingModel(getString(R.string.dm_allow_bottom), "关"),
-            SettingModel(getString(R.string.dm_filter_weight), "关"),
-            SettingModel(getString(R.string.allow_vip_colorful_dm), "开"),
-            SettingModel(getString(R.string.dm_merge_duplicate), "开"),
-            SettingModel(getString(R.string.dm_smart_shield), "关"),
-            SettingModel(getString(R.string.show_dm_switch), "关")
+            storedSetting(getString(R.string.dm_switch), "开"),
+            storedSetting(getString(R.string.dm_alpha), "1.0"),
+            storedSetting(getString(R.string.dm_text_size), "40"),
+            storedSetting(getString(R.string.dm_screen_area), "1/2"),
+            storedSetting(getString(R.string.dm_speed), "4"),
+            storedSetting(getString(R.string.dm_track_spacing), "标准"),
+            storedSetting(getString(R.string.dm_allow_top), "关"),
+            storedSetting(getString(R.string.dm_allow_bottom), "关"),
+            storedSetting(getString(R.string.dm_filter_weight), "关"),
+            storedSetting(getString(R.string.allow_vip_colorful_dm), "开"),
+            storedSetting(getString(R.string.dm_merge_duplicate), "开"),
+            storedSetting(getString(R.string.dm_smart_shield), "关"),
+            storedSetting(getString(R.string.show_dm_switch), "关")
         )
 
-        deviceSettings.add(DEVICE_POSITION_VERSION, SettingModel("应用版本", BuildConfig.VERSION_NAME))
-        deviceSettings.add(DEVICE_POSITION_CHECK_UPDATE, SettingModel("检查更新", "点击检查"))
-        deviceSettings.add(DEVICE_POSITION_DEVICE_MODEL, SettingModel("设备型号", Build.MODEL))
-        deviceSettings.add(DEVICE_POSITION_SYSTEM_VERSION, SettingModel("系统版本", "Android ${Build.VERSION.RELEASE}"))
-        deviceSettings.add(DEVICE_POSITION_SDK_VERSION, SettingModel("SDK版本", Build.VERSION.SDK_INT.toString()))
-        deviceSettings.add(DEVICE_POSITION_CPU_ABI, SettingModel("CPU架构", Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown"))
-        deviceSettings.add(DEVICE_POSITION_SCREEN, SettingModel("屏幕分辨率", ScreenUtils.getRealScreenInfo(requireContext()).toString()))
-        deviceSettings.add(DEVICE_POSITION_CODEC, SettingModel("硬解支持", ""))
+        deviceSettings.add(DEVICE_POSITION_VERSION, SettingModel(getString(R.string.app_version), BuildConfig.VERSION_NAME))
+        deviceSettings.add(DEVICE_POSITION_CHECK_UPDATE, SettingModel(getString(R.string.check_update), getString(R.string.update_click_to_check)))
+        deviceSettings.add(DEVICE_POSITION_DEVICE_MODEL, SettingModel(getString(R.string.device_model), Build.MODEL))
+        deviceSettings.add(DEVICE_POSITION_SYSTEM_VERSION, SettingModel(getString(R.string.system_version), "Android ${Build.VERSION.RELEASE}"))
+        deviceSettings.add(DEVICE_POSITION_SDK_VERSION, SettingModel(getString(R.string.sdk_version), Build.VERSION.SDK_INT.toString()))
+        deviceSettings.add(DEVICE_POSITION_CPU_ABI, SettingModel(getString(R.string.cpu_arch), Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown"))
+        deviceSettings.add(DEVICE_POSITION_SCREEN, SettingModel(getString(R.string.screen_resolution), ScreenUtils.getRealScreenInfo(requireContext()).toString()))
+        deviceSettings.add(DEVICE_POSITION_CODEC, SettingModel(getString(R.string.hardware_decode), ""))
 
-        commonSettings.add(SettingModel("日志记录", if (AppLog.isEnabled) "开" else "关"))
-        commonSettings.add(SettingModel("调试日志", ""))
+        commonSettings.add(SettingModel(getString(R.string.log_record), getString(if (AppLog.isEnabled) R.string.on else R.string.off)))
+        commonSettings.add(SettingModel(getString(R.string.debug_log), ""))
 
         restoreSavedSettings()
         updateCacheSizeAsync()
@@ -408,12 +430,12 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
 
         // 已加载或已安装 → 无需重复操作
         if (x5.isX5Loaded(activity) || x5.isInstalled(activity)) {
-            Toast.makeText(activity, "X5 内核已安装", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, getString(R.string.x5_installed_toast), Toast.LENGTH_SHORT).show()
             return
         }
         // 正在处理 → 提示等待
         if (x5.isBusy()) {
-            Toast.makeText(activity, "正在处理中，请稍候...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, getString(R.string.processing_toast), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -433,7 +455,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             setBackgroundResource(R.drawable.dialog_background)
         }
         val titleView = ScaledTextView(requireContext()).apply {
-            text = "正在下载 X5 内核"
+            text = getString(R.string.x5_downloading_title)
             setTextColor(textColor); textSize = 14f
             setTypeface(null, android.graphics.Typeface.BOLD)
             layoutParams = android.widget.LinearLayout.LayoutParams(
@@ -458,7 +480,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
         root.addView(progressBar)
         val progressText = ScaledTextView(requireContext()).apply {
-            text = "连接中…"
+            text = getString(R.string.connecting)
             setTextColor(textColor); textSize = 11f
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -467,7 +489,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
         root.addView(progressText)
         val cancelButton = ScaledTextView(requireContext()).apply {
-            text = "取消"; setTextColor(textColor); textSize = 12f
+            text = getString(R.string.cancel); setTextColor(textColor); textSize = 12f
             setPadding(resources.getDimensionPixelSize(R.dimen.px16), px14, resources.getDimensionPixelSize(R.dimen.px16), px14)
             isClickable = true; isFocusable = true
             setBackgroundResource(R.drawable.bg_dialog_button)
@@ -481,7 +503,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         dialog.show()
         dialog.window?.setLayout(resources.getDimensionPixelSize(R.dimen.px800), ViewGroup.LayoutParams.WRAP_CONTENT)
 
-        updateX5StatusItem("下载中...")
+        updateX5StatusItem(getString(R.string.x5_status_downloading))
 
         // 启动下载（X5TbsDownloader 回调已切主线程）
         x5.download(activity, object : com.mytvb.feature.marmot.x5.X5TbsDownloader.Callback {
@@ -499,13 +521,16 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
                 if (!isAdded) return
                 dialog.dismiss()
                 Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
-                updateX5StatusItem(if (success) "✓ 已安装（重启中）" else "安装失败，点击重试")
+                updateX5StatusItem(
+                    if (success) getString(R.string.x5_status_installed_restart)
+                    else getString(R.string.x5_status_install_failed)
+                )
             }
         })
 
         cancelButton.setOnClickListener {
             dialog.dismiss()
-            updateX5StatusItem("已取消")
+            updateX5StatusItem(getString(R.string.x5_status_cancelled))
         }
     }
 
@@ -525,40 +550,45 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         val x5 = com.mytvb.feature.marmot.x5.X5TbsDownloader
         // 已安装 → 直播用 X5（installLocalTbsCore 成功后直接 new X5 WebView，不查 canLoadX5）
         val status = when {
-            x5.isInstalled(activity) -> "✓ 已安装（直播用 X5 内核）"
-            x5.isDownloaded(activity) -> "已下载，点击安装"
-            else -> "未安装"
+            x5.isInstalled(activity) -> getString(R.string.x5_status_installed_live)
+            x5.isDownloaded(activity) -> getString(R.string.x5_status_downloaded)
+            else -> getString(R.string.x5_status_not_installed)
         }
         updateX5StatusItem(status)
     }
 
-    private fun handleCommonSettingClick(position: Int, @Suppress("UNUSED_PARAMETER") item: SettingModel) {
+    private fun handleCommonSettingClick(position: Int, item: SettingModel) {
         when (position) {
             0 -> clearCache()
             1 -> showCacheLimitDialog()
             2 -> showCommonChoiceDialog(position, KEY_DEFAULT_START_PAGE, HOME_START_PAGE_OPTIONS)
             3 -> showCommonChoiceDialog(position, KEY_IMAGE_QUALITY, arrayOf("低尺寸", "中尺寸", "高尺寸"))
-            4 -> showCommonChoiceDialog(position, KEY_THEME, resources.getStringArray(R.array.themes).drop(1).toTypedArray())
-            5 -> toggleSetting(commonSettings, 5, KEY_LIVE_ENTRY) { value ->
+            4 -> showCommonChoiceDialog(position, KEY_THEME, THEME_OPTIONS)
+            COMMON_POSITION_UI_LANGUAGE -> showLanguageChoiceDialog()
+            6 -> toggleSetting(commonSettings, 6, KEY_LIVE_ENTRY) { value ->
                 appSettings.putStringAsync(KEY_LIVE_ENTRY, value)
                 val activity = activity as? MainActivity
                 activity?.applyLiveEntryVisibility()
             }
-            6 -> showRiskControlDialog()
-            7 -> toggleSetting(commonSettings, 7, KEY_SHOW_VIDEO_DETAIL)
-            8 -> showCommonChoiceDialog(position, KEY_GIVE_COIN_NUMBER, arrayOf("1", "2"))
-            9 -> toggleSetting(commonSettings, 9, KEY_IPV4_ONLY)
-            10 -> toggleSetting(commonSettings, 10, KEY_DOUYIN_MODE)
+            COMMON_POSITION_RISK_CONTROL -> showRiskControlDialog()
+            8 -> toggleSetting(commonSettings, 8, KEY_SHOW_VIDEO_DETAIL)
+            9 -> showCommonChoiceDialog(position, KEY_GIVE_COIN_NUMBER, arrayOf("1", "2"))
+            10 -> toggleSetting(commonSettings, 10, KEY_IPV4_ONLY)
+            11 -> toggleSetting(commonSettings, 11, KEY_DOUYIN_MODE)
             COMMON_POSITION_UI_TEXT_SIZE -> showUiTextScaleDialog()
             COMMON_POSITION_CARD_SIZE -> showCardSizeChoiceDialog()
             commonSettings.lastIndex - 1 -> {
                 val newValue = if (AppLog.isEnabled) "关" else "开"
                 AppLog.setEnabled(newValue == "开")
-                updateSetting(commonSettings, position, newValue)
-                Toast.makeText(requireContext(), "日志记录：$newValue", Toast.LENGTH_SHORT).show()
+                updateStoredSetting(commonSettings, position, newValue)
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.log_enabled_toast, labelOf(newValue)),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             commonSettings.lastIndex -> {
-                if (item.title == "调试日志") {
+                if (item.title == getString(R.string.debug_log)) {
                     val activity = activity as? MainActivity
                     activity?.openOverlayFragment(DebugLogFragment.newInstance(), "debug_log")
                 }
@@ -584,12 +614,12 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             13 -> toggleSetting(playerSettings, 13, KEY_SHOW_NEXT_PREVIOUS)
             14 -> toggleSetting(playerSettings, 14, KEY_RESUME_PLAYBACK)
             15 -> toggleSponsorBlock()
-            16 -> showChoiceDialog(
+            16 -> showStoredChoiceDialog(
                 playerSettings[16].title,
-                playerSettings[16].info,
+                playerSettings[16].value,
                 AUDIO_BALANCE_OPTIONS
             ) { value ->
-                updateSetting(playerSettings, 16, value)
+                updateStoredSetting(playerSettings, 16, value)
                 appSettings.putStringAsync(KEY_AUDIO_BALANCE, value)
                 // 刷新全局档位：正在播放的 player 下一个音频块即生效，无需重建播放器。
                 AudioBalanceSettings.applySettingValue(value)
@@ -662,38 +692,50 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
     }
 
+    /** 青少年时长选项的本地化显示数组：与 TEEN_TIME_OPTIONS 按下标一一对应。 */
+    private fun teenTimeDisplayOptions(): Array<String> =
+        Array(TEEN_TIME_OPTIONS.size) { index -> formatTeenTimeDisplay(TEEN_TIME_OPTIONS[index]) }
+
     /** 公益广告间隔选择：与休息计时独立，间隔可任意设置（0=不播）。 */
     private fun showPsasIntervalChoiceDialog(position: Int) {
+        val displayOptions = teenTimeDisplayOptions()
         showChoiceDialog(
             title = teenSettings[position].title,
             currentValue = teenSettings[position].info,
-            options = TEEN_TIME_DISPLAY
+            options = displayOptions
         ) { selected ->
-            val index = TEEN_TIME_DISPLAY.indexOf(selected).coerceAtLeast(0)
+            val index = displayOptions.indexOf(selected).coerceAtLeast(0)
             val rawValue = TEEN_TIME_OPTIONS[index]
+            teenSettings.getOrNull(position)?.value = rawValue
             updateSetting(teenSettings, position, selected)
             appSettings.putStringAsync(KEY_PSAS_INTERVAL, rawValue)
             com.mytvb.core.common.content.TeenModeTimer.resetForLimitChange()
-            Toast.makeText(requireContext(), "${teenSettings[position].title}：$selected", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                requireContext(),
+                getString(R.string.toast_setting_value_format, teenSettings[position].title, selected),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
     private fun showTeenTimeChoiceDialog(position: Int, key: String) {
+        val displayOptions = teenTimeDisplayOptions()
         showChoiceDialog(
             title = teenSettings[position].title,
             currentValue = teenSettings[position].info,
-            options = TEEN_TIME_DISPLAY
+            options = displayOptions
         ) { selected ->
             // 把显示值映射回数字字符串存储（"不限制" → "0"）
-            val index = TEEN_TIME_DISPLAY.indexOf(selected).coerceAtLeast(0)
+            val index = displayOptions.indexOf(selected).coerceAtLeast(0)
             val rawValue = TEEN_TIME_OPTIONS[index]
+            teenSettings.getOrNull(position)?.value = rawValue
             updateSetting(teenSettings, position, selected)
             appSettings.putStringAsync(key, rawValue)
             // 改时长设置：清掉累计观看时长与休息戳，避免脏状态
             com.mytvb.core.common.content.TeenModeTimer.resetForLimitChange()
             Toast.makeText(
                 requireContext(),
-                "${teenSettings[position].title}：$selected",
+                getString(R.string.toast_setting_value_format, teenSettings[position].title, selected),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -703,20 +745,30 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
     private fun restoreTeenTimeLimits() {
         val watchRaw = appSettings.getCachedString(KEY_WATCH_TIME_LIMIT)
         val restRaw = appSettings.getCachedString(KEY_REST_TIME_LIMIT)
-        teenSettings.getOrNull(1)?.info = formatTeenTimeDisplay(watchRaw)
-        teenSettings.getOrNull(2)?.info = formatTeenTimeDisplay(restRaw)
+        applyTeenTimeDisplay(1, watchRaw)
+        applyTeenTimeDisplay(2, restRaw)
         // 公益广告开关 + 间隔
-        teenSettings.getOrNull(3)?.info = appSettings.getCachedString(KEY_PSAS_ENABLED) ?: "关"
-        teenSettings.getOrNull(4)?.info = formatTeenTimeDisplay(
-            appSettings.getCachedString(KEY_PSAS_INTERVAL) ?: "20"
-        )
+        applySavedValue(teenSettings, 3, KEY_PSAS_ENABLED)
+        applyTeenTimeDisplay(4, appSettings.getCachedString(KEY_PSAS_INTERVAL) ?: "20")
+    }
+
+    private fun applyTeenTimeDisplay(index: Int, raw: String?) {
+        val stored = raw?.trim().takeUnless { it.isNullOrEmpty() } ?: "0"
+        teenSettings.getOrNull(index)?.let {
+            it.value = stored
+            it.info = formatTeenTimeDisplay(stored)
+        }
     }
 
     private fun formatTeenTimeDisplay(raw: String?): String {
         val idx = TEEN_TIME_OPTIONS.indexOf(raw?.trim())
-        if (idx < 0) return "不限制"
+        if (idx < 0) return getString(R.string.setting_value_unlimited)
         val value = TEEN_TIME_OPTIONS[idx].toIntOrNull() ?: 0
-        return if (value == 0) "不限制" else "${value}分钟"
+        return if (value == 0) {
+            getString(R.string.setting_value_unlimited)
+        } else {
+            getString(R.string.setting_minutes_format, value)
+        }
     }
 
     private var cachedReleaseInfo: ApkUpdater.ReleaseInfo? = null
@@ -724,7 +776,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
     private fun checkForUpdate() {
         val cooldown = ApkUpdater.cooldownLeftMs()
         if (cooldown > 0) {
-            Toast.makeText(requireContext(), "请稍后再试", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.toast_try_later), Toast.LENGTH_SHORT).show()
             return
         }
         ApkUpdater.markStarted()
@@ -745,10 +797,14 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
                 }
             } catch (e: Exception) {
                 AppLog.e("SettingsFragment", "check update failed", e)
-                val msg = e.message ?: "未知错误"
+                val msg = e.message ?: getString(R.string.unknown_error)
                 updateCheckState.value = UpdateCheckState.Error(msg)
                 updateUpdateEntry()
-                Toast.makeText(requireContext(), "检查失败：$msg", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.update_check_failed_format, msg),
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
@@ -756,11 +812,11 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
     private fun updateUpdateEntry() {
         if (!isAdded) return
         val info = when (val state = updateCheckState.value) {
-            is UpdateCheckState.Idle -> "点击检查"
-            is UpdateCheckState.Checking -> "检查中…"
-            is UpdateCheckState.Latest -> "已是最新版（${state.latestVersion}）"
-            is UpdateCheckState.UpdateAvailable -> "新版本 ${state.latestVersion}"
-            is UpdateCheckState.Error -> "检查失败"
+            is UpdateCheckState.Idle -> getString(R.string.update_click_to_check)
+            is UpdateCheckState.Checking -> getString(R.string.update_checking)
+            is UpdateCheckState.Latest -> getString(R.string.update_latest_format, state.latestVersion)
+            is UpdateCheckState.UpdateAvailable -> getString(R.string.update_new_version_format, state.latestVersion)
+            is UpdateCheckState.Error -> getString(R.string.update_check_failed)
         }
         deviceSettings.getOrNull(DEVICE_POSITION_CHECK_UPDATE)?.info = info
         if (currentCategory == CATEGORY_DEVICE) {
@@ -791,7 +847,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
 
         root.addView(ScaledTextView(requireContext()).apply {
-            text = "发现新版本"
+            text = getString(R.string.update_found_new)
             setTextColor(textColor)
             textSize = 14f
             setTypeface(null, android.graphics.Typeface.BOLD)
@@ -833,7 +889,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             layoutParams = lp
         }
 
-        listOf("取消" to { dialog.dismiss() }, "下载更新" to {
+        listOf(getString(R.string.cancel) to { dialog.dismiss() }, getString(R.string.update_download_action) to {
             dialog.dismiss()
             val apkUrl = cachedReleaseInfo?.apkUrl
             if (apkUrl != null) startDownloadApk(apkUrl)
@@ -879,7 +935,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
 
         val titleView = ScaledTextView(requireContext()).apply {
-            text = "正在下载更新"
+            text = getString(R.string.update_downloading_title)
             setTextColor(textColor)
             textSize = 14f
             setTypeface(null, android.graphics.Typeface.BOLD)
@@ -906,7 +962,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(progressBar)
 
         val progressText = ScaledTextView(requireContext()).apply {
-            text = "连接中…"
+            text = getString(R.string.connecting)
             setTextColor(textColor)
             textSize = 11f
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
@@ -916,7 +972,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(progressText)
 
         val cancelButton = ScaledTextView(requireContext()).apply {
-            text = "取消"
+            text = getString(R.string.cancel)
             setTextColor(textColor)
             textSize = 12f
             setPadding(resources.getDimensionPixelSize(R.dimen.px16), px14, resources.getDimensionPixelSize(R.dimen.px16), px14)
@@ -951,7 +1007,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
                             if (!isAdded) return@post
                             when (progress) {
                                 is ApkUpdater.Progress.Connecting -> {
-                                    progressText.text = "连接中…"
+                                    progressText.text = getString(R.string.connecting)
                                     progressBar.isIndeterminate = true
                                 }
                                 is ApkUpdater.Progress.Downloading -> {
@@ -961,7 +1017,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
                                 }
                                 is ApkUpdater.Progress.Done -> {}
                                 is ApkUpdater.Progress.Retrying -> {
-                                    progressText.text = "连接失败，正在重试（${progress.attempt}/${progress.maxAttempts}）…"
+                                    progressText.text = getString(R.string.retrying_format, progress.attempt, progress.maxAttempts)
                                     progressBar.isIndeterminate = true
                                 }
                             }
@@ -975,10 +1031,10 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
                 dialog.dismiss()
                 AppLog.e("SettingsFragment", "download apk failed", e)
                 val hint = when (e) {
-                    is java.net.SocketTimeoutException -> "网络连接超时，请检查网络后重试"
-                    is java.net.UnknownHostException -> "网络不可用，请检查网络连接"
-                    is java.io.IOException -> "网络异常，请稍后重试"
-                    else -> "下载失败，请稍后重试"
+                    is java.net.SocketTimeoutException -> getString(R.string.net_timeout_toast)
+                    is java.net.UnknownHostException -> getString(R.string.net_unavailable_toast)
+                    is java.io.IOException -> getString(R.string.net_error_toast)
+                    else -> getString(R.string.download_failed_toast)
                 }
                 Toast.makeText(requireContext(), hint, Toast.LENGTH_LONG).show()
                 updateCheckState.value = UpdateCheckState.Idle
@@ -1010,19 +1066,19 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             context.externalCacheDir?.let { deleteDir(it) }
             commonSettings[0].info = NumberUtils.formatBytes(getCurrentCacheSize())
             adapter.notifyItemChanged(0)
-            Toast.makeText(requireContext(), "缓存已清除", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.toast_cache_cleared), Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             AppLog.e("SettingsFragment", "clearCache failed", e)
         }
     }
 
     private fun showCacheLimitDialog() {
-        showChoiceDialog(
+        showStoredChoiceDialog(
             title = commonSettings[1].title,
-            currentValue = commonSettings[1].info,
-            options = arrayOf("不限制", "200 MB", "500 MB", "1 GB")
+            currentStored = commonSettings[1].value,
+            storedOptions = arrayOf("不限制", "200 MB", "500 MB", "1 GB")
         ) { value ->
-            updateSetting(commonSettings, 1, value)
+            updateStoredSetting(commonSettings, 1, value)
             appSettings.putStringAsync(KEY_CACHE_LIMIT, value)
             FileCacheManager.trimToLimit()
             // SimpleCache 创建后上限不可改，必须释放对象让下次播放按新上限重建。
@@ -1089,31 +1145,40 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         applySavedValue(commonSettings, 1, KEY_CACHE_LIMIT)
         val defaultStartPage = appSettings.getCachedInt("defaultStartPage", -1)
         if (defaultStartPage >= 0) {
-            commonSettings[2].info = HOME_START_PAGE_OPTIONS
+            val stored = HOME_START_PAGE_OPTIONS
                 .getOrNull(defaultStartPage)
                 ?: HOME_START_PAGE_OPTIONS.first()
+            commonSettings[2].value = stored
+            commonSettings[2].info = labelOf(stored)
         } else {
             applySavedValue(commonSettings, 2, KEY_DEFAULT_START_PAGE)
         }
-        if (commonSettings[2].info !in HOME_START_PAGE_OPTIONS) {
-            commonSettings[2].info = HOME_START_PAGE_OPTIONS.first()
+        if (commonSettings[2].value !in HOME_START_PAGE_OPTIONS) {
+            commonSettings[2].value = HOME_START_PAGE_OPTIONS.first()
+            commonSettings[2].info = labelOf(HOME_START_PAGE_OPTIONS.first())
         }
         applySavedValue(commonSettings, 3, KEY_IMAGE_QUALITY)
         val theme = appSettings.getCachedInt("theme", 1)
-        commonSettings[4].info = theme.toThemeName()
-        applySavedValue(commonSettings, 5, KEY_LIVE_ENTRY)
+        val themeName = theme.toThemeName()
+        commonSettings[4].value = themeName
+        commonSettings[4].info = labelOf(themeName)
+        applySavedValue(commonSettings, 6, KEY_LIVE_ENTRY)
         updateRiskControlStatus()
-        applySavedValue(commonSettings, 7, KEY_SHOW_VIDEO_DETAIL)
-        applySavedValue(commonSettings, 8, KEY_GIVE_COIN_NUMBER)
-        applySavedValue(commonSettings, 9, KEY_IPV4_ONLY)
-        applySavedValue(commonSettings, 10, KEY_DOUYIN_MODE)
-        commonSettings[COMMON_POSITION_UI_TEXT_SIZE].info = UiTextScale.nameOf(
+        applySavedValue(commonSettings, 8, KEY_SHOW_VIDEO_DETAIL)
+        applySavedValue(commonSettings, 9, KEY_GIVE_COIN_NUMBER)
+        applySavedValue(commonSettings, 10, KEY_IPV4_ONLY)
+        applySavedValue(commonSettings, 11, KEY_DOUYIN_MODE)
+        val textScaleName = UiTextScale.nameOf(
             appSettings.getCachedString(UiTextScale.KEY_UI_TEXT_SCALE)?.toIntOrNull()
                 ?: UiTextScale.DEFAULT_PERCENT
         )
-        commonSettings[COMMON_POSITION_CARD_SIZE].info = UiCardSize.nameOf(
+        commonSettings[COMMON_POSITION_UI_TEXT_SIZE].value = textScaleName
+        commonSettings[COMMON_POSITION_UI_TEXT_SIZE].info = labelOf(textScaleName)
+        val cardSizeName = UiCardSize.nameOf(
             appSettings.getCachedString(UiCardSize.KEY_UI_CARD_SIZE)?.toIntOrNull() ?: 0
         )
+        commonSettings[COMMON_POSITION_CARD_SIZE].value = cardSizeName
+        commonSettings[COMMON_POSITION_CARD_SIZE].info = labelOf(cardSizeName)
 
         // 青少年模式分类：保护开关（从通用设置迁移）+ 观看时长 + 休息时长
         applySavedValue(teenSettings, 0, KEY_MINOR_PROTECTION)
@@ -1131,9 +1196,8 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         applySavedValue(playerSettings, 5, KEY_PLAY_FINISH_EXIT_PLAYER)
         applySavedValue(playerSettings, 6, KEY_VIDEO_CODEC)
         // 字幕设置项：读新 key（subtitle_default_mode），未选过时默认显示"自动字幕"
-        playerSettings.getOrNull(7)?.info = subtitleModeDisplayName(
-            appSettings.getCachedString(KEY_SUBTITLE_DEFAULT_MODE)
-        )
+        val subtitleStored = subtitleModeStoredName(appSettings.getCachedString(KEY_SUBTITLE_DEFAULT_MODE))
+        playerSettings.getOrNull(7)?.let { it.value = subtitleStored; it.info = labelOf(subtitleStored) }
         applySavedValue(playerSettings, 8, KEY_SUBTITLE_TEXT_SIZE)
         applySavedValue(playerSettings, 9, KEY_SHOW_PLAYBACK_RATE)
         applySavedValue(playerSettings, 10, KEY_SHOW_PLAY_SPEED_BUTTON)
@@ -1143,10 +1207,11 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         applySavedValue(playerSettings, 14, KEY_RESUME_PLAYBACK)
         applySavedValue(playerSettings, 15, KEY_SPONSOR_BLOCK_ENABLED)
         // 音量均衡：新 key（关/低/中/高）优先显示；未设置时旧布尔"开"显示为"中"。
-        playerSettings.getOrNull(16)?.info = audioBalanceDisplayName(
+        val audioBalanceStored = audioBalanceStoredValue(
             appSettings.getCachedString(KEY_AUDIO_BALANCE),
             appSettings.getCachedString(KEY_AUDIO_NORMALIZE_LEGACY)
         )
+        playerSettings.getOrNull(16)?.let { it.value = audioBalanceStored; it.info = labelOf(audioBalanceStored) }
         applySavedValue(playerSettings, 17, KEY_SEAMLESS_QUALITY_SWITCH)
 
         applySavedValue(dmSettings, 0, KEY_DM_SWITCH)
@@ -1157,9 +1222,13 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         applySavedValue(dmSettings, 5, KEY_DM_TRACK_SPACING)
         applySavedValue(dmSettings, 6, KEY_DM_ALLOW_TOP)
         applySavedValue(dmSettings, 7, KEY_DM_ALLOW_BOTTOM)
-        dmSettings[8].info = normalizeDanmakuSmartFilterValue(
-            appSettings.getCachedString(KEY_DM_FILTER_WEIGHT) ?: dmSettings[8].info
-        )
+        dmSettings[8].let { item ->
+            val stored = normalizeDanmakuSmartFilterValue(
+                appSettings.getCachedString(KEY_DM_FILTER_WEIGHT) ?: item.value
+            )
+            item.value = stored
+            item.info = labelOf(stored)
+        }
         applySavedValue(dmSettings, 9, KEY_DM_ALLOW_VIP_COLORFUL_DM)
         applySavedValue(dmSettings, 10, KEY_DM_MERGE_DUPLICATE)
         applySavedValue(dmSettings, 11, KEY_DM_SMART_SHIELD)
@@ -1168,18 +1237,18 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
 
     private fun applySavedValue(target: MutableList<SettingModel>, index: Int, key: String) {
         appSettings.getCachedString(key)?.let { saved ->
-            target.getOrNull(index)?.info = saved
+            target.getOrNull(index)?.let { it.value = saved; it.info = labelOf(saved) }
         }
     }
 
-    /** 音量均衡显示值：新 key 有值直接用；未设置时旧布尔开关"开"归一为"中"，其余显示"关"。 */
-    private fun audioBalanceDisplayName(value: String?, legacyValue: String?): String {
+    /** 音量均衡存储值：新 key 有值直接用；未设置时旧布尔开关"开"归一为"中"，其余为"关"。 */
+    private fun audioBalanceStoredValue(value: String?, legacyValue: String?): String {
         if (!value.isNullOrBlank()) return value
         return if (legacyValue?.trim() == "开") "中" else "关"
     }
 
-    /** 字幕三态的显示文案归一化：未设置/旧值一律显示"自动字幕"（自动为全新默认档）。 */
-    private fun subtitleModeDisplayName(saved: String?): String = when (saved?.trim()) {
+    /** 字幕三态的存储值归一化：未设置/旧值一律为"自动字幕"（自动为全新默认档）。 */
+    private fun subtitleModeStoredName(saved: String?): String = when (saved?.trim()) {
         "开启字幕" -> "开启字幕"
         "关闭字幕" -> "关闭字幕"
         "自动字幕" -> "自动字幕"
@@ -1199,9 +1268,50 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
     }
 
+    /** 当前生效的应用语言 tag："" = 跟随系统。 */
+    private fun currentAppLanguageTag(): String {
+        val locales = AppCompatDelegate.getApplicationLocales()
+        if (locales.isEmpty) return ""
+        val locale = locales[0] ?: return ""
+        return when (locale.language) {
+            "zh" -> if (locale.script == "Hant" || locale.country in setOf("TW", "HK", "MO")) "zh-TW" else "zh-CN"
+            "en" -> "en"
+            else -> ""
+        }
+    }
+
+    private fun currentLanguageDisplay(): String {
+        return when (val tag = currentAppLanguageTag()) {
+            "" -> getString(R.string.follow_system)
+            "zh-TW" -> UI_LANGUAGE_NAMES[1]
+            "en" -> UI_LANGUAGE_NAMES[2]
+            else -> UI_LANGUAGE_NAMES[0]
+        }
+    }
+
+    /** 界面语言选择：appcompat 托管持久化并自动重建全部界面，无需手动 recreate / 落盘。 */
+    private fun showLanguageChoiceDialog() {
+        val options = Array(UI_LANGUAGE_TAGS.size) { index ->
+            if (index == 0) getString(R.string.follow_system) else UI_LANGUAGE_NAMES[index - 1]
+        }
+        showChoiceDialog(
+            commonSettings[COMMON_POSITION_UI_LANGUAGE].title,
+            currentLanguageDisplay(),
+            options
+        ) { selected ->
+            val index = options.indexOf(selected).coerceAtLeast(0)
+            val tag = UI_LANGUAGE_TAGS[index]
+            AppCompatDelegate.setApplicationLocales(
+                if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                else LocaleListCompat.forLanguageTags(tag)
+            )
+            commonSettings.getOrNull(COMMON_POSITION_UI_LANGUAGE)?.info = currentLanguageDisplay()
+        }
+    }
+
     private fun showCommonChoiceDialog(position: Int, key: String, options: Array<String>) {
-        showChoiceDialog(commonSettings[position].title, commonSettings[position].info, options) { value ->
-            updateSetting(commonSettings, position, value)
+        showStoredChoiceDialog(commonSettings[position].title, commonSettings[position].value, options) { value ->
+            updateStoredSetting(commonSettings, position, value)
             appSettings.putStringAsync(key, value)
             when (key) {
                 KEY_DEFAULT_START_PAGE -> {
@@ -1243,8 +1353,8 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
     }
 
     private fun showPlayerChoiceDialog(position: Int, key: String, options: Array<String>) {
-        showChoiceDialog(playerSettings[position].title, playerSettings[position].info, options) { value ->
-            updateSetting(playerSettings, position, value)
+        showStoredChoiceDialog(playerSettings[position].title, playerSettings[position].value, options) { value ->
+            updateStoredSetting(playerSettings, position, value)
             appSettings.putStringAsync(key, value)
         }
     }
@@ -1275,7 +1385,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         val savedPercent = appSettings.getCachedString(UiTextScale.KEY_UI_TEXT_SCALE)
             ?.toIntOrNull() ?: UiTextScale.DEFAULT_PERCENT
         val selectedIndex = UiTextScale.indexOf(savedPercent)
-        val options = UiTextScale.NAMES.mapIndexed { i, name -> "$name ${percents[i]}%" }
+        val options = UiTextScale.NAMES.mapIndexed { i, name -> "${labelOf(name)} ${percents[i]}%" }
 
         val choiceAdapter = SettingSelectionDialogAdapter(
             options = options,
@@ -1288,7 +1398,6 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             activity?.recreate()
             dialog.dismiss()
         }
-
         val dialogLayoutManager = createExtraSpaceLayoutManager(
             resources.getDimensionPixelSize(R.dimen.px100)
         )
@@ -1316,13 +1425,18 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
     private fun showCardSizeChoiceDialog() {
         val savedOffset = appSettings.getCachedString(UiCardSize.KEY_UI_CARD_SIZE)
             ?.toIntOrNull() ?: 0
+        val displayOptions = UiCardSize.NAMES.map { labelOf(it) }.toTypedArray()
         showChoiceDialog(
             commonSettings[COMMON_POSITION_CARD_SIZE].title,
-            UiCardSize.nameOf(savedOffset),
-            UiCardSize.NAMES
-        ) { value ->
-            val offset = UiCardSize.offsetAt(UiCardSize.NAMES.indexOf(value))
-            updateSetting(commonSettings, COMMON_POSITION_CARD_SIZE, value)
+            labelOf(UiCardSize.nameOf(savedOffset)),
+            displayOptions
+        ) { selected ->
+            val index = displayOptions.indexOf(selected).coerceAtLeast(0)
+            val offset = UiCardSize.offsetAt(index)
+            commonSettings.getOrNull(COMMON_POSITION_CARD_SIZE)?.let {
+                it.value = UiCardSize.NAMES.getOrNull(index) ?: "标准"
+            }
+            updateSetting(commonSettings, COMMON_POSITION_CARD_SIZE, selected)
             appSettings.putStringAsync(UiCardSize.KEY_UI_CARD_SIZE, offset.toString())
             activity?.recreate()
         }
@@ -1337,9 +1451,26 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
     }
 
     private fun showDmChoiceDialog(position: Int, key: String, options: Array<String>) {
-        showChoiceDialog(dmSettings[position].title, dmSettings[position].info, options) { value ->
-            updateSetting(dmSettings, position, value)
+        showStoredChoiceDialog(dmSettings[position].title, dmSettings[position].value, options) { value ->
+            updateStoredSetting(dmSettings, position, value)
             persistDmSetting(key, value)
+        }
+    }
+
+    /**
+     * 存储值版单选弹窗：入参与回调均为稳定存储值（中文字面量/数字），
+     * 弹窗内展示本地化文案，选中后按显示值反查下标回传存储值。
+     */
+    private fun showStoredChoiceDialog(
+        title: String,
+        currentStored: String,
+        storedOptions: Array<String>,
+        onSelected: (String) -> Unit
+    ) {
+        val displayOptions = storedOptions.map { labelOf(it) }.toTypedArray()
+        showChoiceDialog(title, labelOf(currentStored), displayOptions) { selected ->
+            val index = displayOptions.indexOf(selected).coerceAtLeast(0)
+            onSelected(storedOptions.getOrElse(index) { storedOptions.first() })
         }
     }
 
@@ -1454,6 +1585,14 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
     }
 
+    /** 写入存储值并同步刷新本地化显示。 */
+    private fun updateStoredSetting(target: MutableList<SettingModel>, position: Int, stored: String) {
+        target.getOrNull(position)?.let { it.value = stored; it.info = labelOf(stored) }
+        if (isCurrentCategoryList(target)) {
+            adapter.notifyItemChanged(position)
+        }
+    }
+
     private fun isCurrentCategoryList(target: MutableList<SettingModel>): Boolean {
         return when (currentCategory) {
             CATEGORY_COMMON -> target === commonSettings
@@ -1494,27 +1633,32 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         persist: (String) -> Unit = { appSettings.putStringAsync(key, it) }
     ) {
         val setting = target.getOrNull(position) ?: return
-        val newValue = if (setting.info == "开") "关" else "开"
-        updateSetting(target, position, newValue)
+        val newValue = if (setting.value == "开") "关" else "开"
+        updateStoredSetting(target, position, newValue)
         persist(newValue)
-        Toast.makeText(requireContext(), "${setting.title}：$newValue", Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+            requireContext(),
+            getString(R.string.toast_setting_value_format, setting.title, labelOf(newValue)),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun toggleSponsorBlock() {
         val setting = playerSettings.getOrNull(15) ?: return
-        val currentValue = setting.info
+        val currentValue = setting.value
         val newValue = if (currentValue == "开") "关" else "开"
-        updateSetting(playerSettings, 15, newValue)
+        updateStoredSetting(playerSettings, 15, newValue)
         appSettings.putStringAsync(KEY_SPONSOR_BLOCK_ENABLED, newValue)
+        val title = getString(R.string.sponsor_block)
 
         if (newValue == "关") {
-            Toast.makeText(requireContext(), "空降助手：关", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.toast_setting_value_format, title, labelOf(newValue)), Toast.LENGTH_SHORT).show()
             return
         }
 
-        Toast.makeText(requireContext(), "空降助手：开，正在测试…", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), "${getString(R.string.toast_setting_value_format, title, labelOf(newValue))}，${getString(R.string.sponsor_testing)}", Toast.LENGTH_SHORT).show()
         updateScope.launch {
-            val connError = SponsorBlockRepository.testConnection()
+            val connError = SponsorBlockRepository.testConnection(requireContext())
             withContext(Dispatchers.Main) {
                 if (!isAdded) return@withContext
                 if (connError != null) {
@@ -1522,7 +1666,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
                     return@withContext
                 }
             }
-            val fetchResult = SponsorBlockRepository.testFetch()
+            val fetchResult = SponsorBlockRepository.testFetch(requireContext())
             withContext(Dispatchers.Main) {
                 if (!isAdded) return@withContext
                 Toast.makeText(requireContext(), fetchResult, Toast.LENGTH_LONG).show()
@@ -1536,9 +1680,9 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         val tokenOk = tokenCookie != null && tokenCookie.expiresAt > now
         val voucherOk = !appSettings.getCachedString(KEY_GAIA_VGATE_V_VOUCHER).isNullOrBlank()
         return when {
-            tokenOk -> "已通过"
-            voucherOk -> "待验证"
-            else -> "无"
+            tokenOk -> getString(R.string.risk_status_passed)
+            voucherOk -> getString(R.string.risk_status_pending)
+            else -> getString(R.string.risk_status_none)
         }
     }
 
@@ -1560,7 +1704,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         appSettings.putStringAsync(KEY_GAIA_VGATE_V_VOUCHER, null)
         appSettings.putStringAsync(KEY_GAIA_VGATE_V_VOUCHER_SAVED_AT_MS, null)
         updateRiskControlStatus()
-        Toast.makeText(requireContext(), "验证成功", Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), getString(R.string.verify_success), Toast.LENGTH_SHORT).show()
     }
 
     private fun showRiskControlDialog() {
@@ -1574,23 +1718,23 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         val savedAt = appSettings.getCachedString(KEY_GAIA_VGATE_V_VOUCHER_SAVED_AT_MS)?.toLongOrNull() ?: -1L
 
         val msg = buildString {
-            append("当账号被B站风控时，播放视频会触发人机验证。")
+            append(getString(R.string.risk_dialog_desc))
             append("\n\n")
-            append("验证状态：")
-            append(if (tokenOk) "已通过" else "未验证")
+            append(getString(R.string.risk_verify_status))
+            append(getString(if (tokenOk) R.string.risk_status_passed else R.string.risk_not_verified))
             if (tokenOk && expiresAt > 0L) {
                 append("\n")
-                append("到期时间：").append(DateFormat.format("yyyy-MM-dd HH:mm", expiresAt))
+                append(getString(R.string.risk_expire_time_format, DateFormat.format("yyyy-MM-dd HH:mm", expiresAt)))
             }
             append("\n\n")
-            append("验证凭证：")
-            append(if (hasVoucher) "已保存" else "暂无")
+            append(getString(R.string.risk_voucher_label))
+            append(getString(if (hasVoucher) R.string.risk_voucher_saved else R.string.risk_voucher_none))
             if (hasVoucher && savedAt > 0L) {
                 append("\n")
-                append("保存时间：").append(DateFormat.format("yyyy-MM-dd HH:mm", savedAt))
+                append(getString(R.string.risk_saved_time_format, DateFormat.format("yyyy-MM-dd HH:mm", savedAt)))
             }
             append("\n\n")
-            append("提示：点赞/投币/三连等操作被拦截时，需到B站官方App或网页端完成验证。")
+            append(getString(R.string.risk_dialog_tip))
         }
 
         val px40 = resources.getDimensionPixelSize(R.dimen.px40)
@@ -1615,7 +1759,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
 
         root.addView(ScaledTextView(requireContext()).apply {
-            text = "风控验证"
+            text = getString(R.string.risk_control_verify)
             setTextColor(textColor)
             textSize = 14f
             setTypeface(null, android.graphics.Typeface.BOLD)
@@ -1649,7 +1793,11 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             layoutParams = lp
         }
 
-        val actions = listOf("关闭", "编辑凭证", if (hasVoucher) "开始验证" else "填写凭证")
+        val actions = listOf(
+            getString(R.string.risk_close),
+            getString(R.string.risk_edit_voucher),
+            getString(if (hasVoucher) R.string.risk_start_verify else R.string.risk_fill_voucher)
+        )
 
         actions.forEachIndexed { index, actionText ->
             actionContainer.addView(ScaledTextView(requireContext()).apply {
@@ -1708,7 +1856,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
 
         root.addView(ScaledTextView(requireContext()).apply {
-            text = "编辑验证凭证"
+            text = getString(R.string.edit_voucher_title)
             setTextColor(textColor)
             textSize = 14f
             setTypeface(null, android.graphics.Typeface.BOLD)
@@ -1728,7 +1876,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         val firstActionId = View.generateViewId()
         val editText = EditText(requireContext()).apply {
             id = editTextId
-            hint = "请粘贴验证凭证"
+            hint = getString(R.string.voucher_hint)
             inputType = EditorInfo.TYPE_CLASS_TEXT
             setText(initial)
             setTextColor(textColor)
@@ -1754,7 +1902,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             appSettings.putStringAsync(KEY_GAIA_VGATE_V_VOUCHER, null)
             appSettings.putStringAsync(KEY_GAIA_VGATE_V_VOUCHER_SAVED_AT_MS, null)
             updateRiskControlStatus()
-            Toast.makeText(requireContext(), "凭证已清除", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.voucher_cleared), Toast.LENGTH_SHORT).show()
         }
 
         fun saveVoucher() {
@@ -1763,16 +1911,16 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
                 appSettings.putStringAsync(KEY_GAIA_VGATE_V_VOUCHER, v)
                 appSettings.putStringAsync(KEY_GAIA_VGATE_V_VOUCHER_SAVED_AT_MS, System.currentTimeMillis().toString())
                 updateRiskControlStatus()
-                Toast.makeText(requireContext(), "凭证已保存", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), getString(R.string.voucher_saved_toast), Toast.LENGTH_SHORT).show()
             } else {
                 clearVoucher()
             }
             dialog.dismiss()
         }
 
-        listOf("清除" to { clearVoucher(); dialog.dismiss() },
-               "取消" to { dialog.dismiss() },
-               "保存" to { saveVoucher() }).forEachIndexed { index, (text, action) ->
+        listOf(getString(R.string.clear) to { clearVoucher(); dialog.dismiss() },
+               getString(R.string.cancel) to { dialog.dismiss() },
+               getString(R.string.confirm_save) to { saveVoucher() }).forEachIndexed { index, (text, action) ->
             actionContainer.addView(ScaledTextView(requireContext()).apply {
                 this.text = text
                 setTextColor(textColor)
@@ -1886,7 +2034,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
                                 } else {
                                     inputSequence.clear()
                                     codeDisplayView.text = "? ? ? ? ? ? ? ?"
-                                    Toast.makeText(requireContext(), "魂斗罗秘籍错误", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(requireContext(), getString(R.string.konami_wrong), Toast.LENGTH_SHORT).show()
                                 }
                             }
                             true
@@ -1917,7 +2065,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         })
 
         root.addView(ScaledTextView(requireContext()).apply {
-            text = "使用遥控器方向键输入魂斗罗秘籍才能关闭！"
+            text = getString(R.string.konami_hint)
             setTextColor(textColor)
             textSize = 12f
             setLineSpacing(resources.getDimension(R.dimen.px6), 1f)

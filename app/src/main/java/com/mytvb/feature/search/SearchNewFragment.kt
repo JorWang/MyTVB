@@ -356,7 +356,7 @@ class SearchNewFragment :
         val orders = SearchVideoOrder.values()
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.video_order)
-            .setItems(orders.map { it.showName }.toTypedArray()) { _, which ->
+            .setItems(orders.map { getString(it.nameRes) }.toTypedArray()) { _, which ->
                 currentOrder = orders[which]
                 updateOrderText()
                 if (currentKeyword.isNotBlank()) {
@@ -368,7 +368,7 @@ class SearchNewFragment :
     }
 
     private fun updateOrderText() {
-        binding.textOrder.text = currentOrder.showName
+        binding.textOrder.text = getString(currentOrder.nameRes)
     }
 
     private fun updateOrderButtonVisibility(position: Int = binding.viewPagerResult.currentItem) {

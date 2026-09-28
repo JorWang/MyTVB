@@ -55,7 +55,7 @@
         android:layout_height="match_parent">
         <TextView
             android:id="@+id/teenRestTitle"
-            android:text="请关闭电视注意休息"
+            android:text="@string/activity_teen_rest_banner"
             android:textColor="#FFFFFF"
             android:textSize="@dimen/px48"
             android:textStyle="bold"

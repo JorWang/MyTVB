@@ -233,13 +233,13 @@ class HistoryVideoAdapter(
 
             val durationText = when {
                 item.history?.business == "live" && item.badge.isNotBlank() -> item.badge
-                isWatchedComplete(progressValue, durationValue) -> "已看完"
+                isWatchedComplete(progressValue, durationValue) -> views.root.context.getString(R.string.adapter_watched_complete)
                 durationValue > 0L -> "${NumberUtils.formatDuration(progressValue)}/${NumberUtils.formatDuration(durationValue)}"
                 item.tagName.isNotBlank() -> item.tagName
                 else -> ""
             }
             views.textLayer.setHistoryTrailing(
-                timeText = TimeUtils.formatHistoryViewTime(item.viewAt),
+                timeText = TimeUtils.formatHistoryViewTime(views.root.context, item.viewAt),
                 deviceDrawableRes = HistoryDeviceIcon.resolve(item.history?.dt ?: 0)?.drawableRes ?: 0
             )
             views.coverMetaOverlay.bind(

@@ -40,7 +40,7 @@ class GaiaVgateActivity : AppCompatActivity() {
             return
         }
 
-        status = ScaledTextView(this).apply { text = "正在请求验证…" }
+        status = ScaledTextView(this).apply { text = getString(R.string.activity_verifying_request) }
         webView = WebView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
@@ -69,7 +69,7 @@ class GaiaVgateActivity : AppCompatActivity() {
                 val reg = withContext(Dispatchers.IO) {
                     gaiaVgateRegister(vVoucher, sessionGateway, webGateway)
                 }
-                status.text = "请完成验证…"
+                status.text = getString(R.string.activity_verify_waiting)
                 val bridge = Bridge(token = reg.token)
                 webView.addJavascriptInterface(bridge, "Android")
                 webView.loadDataWithBaseURL(
@@ -102,7 +102,7 @@ class GaiaVgateActivity : AppCompatActivity() {
 
             lifecycleScope.launch {
                 try {
-                    status.text = "验证成功，正在提交…"
+                    status.text = getString(R.string.activity_verify_success_submitting)
                     val grisk = withContext(Dispatchers.IO) {
                         gaiaVgateValidate(
                             token = token,
@@ -140,13 +140,13 @@ class GaiaVgateActivity : AppCompatActivity() {
   </style>
 </head>
 <body>
-    <div>人机验证</div>
-    <button id="btnStart" disabled>开始验证</button>
+    <div>${getString(R.string.activity_geetest_title)}</div>
+    <button id="btnStart" disabled>${getString(R.string.activity_geetest_start)}</button>
   <div id="captcha"></div>
   <script>
     function start() {
       if (typeof initGeetest !== 'function') {
-        document.body.innerHTML = '<div>加载验证码脚本失败，请检查网络</div>';
+        document.body.innerHTML = '<div>${getString(R.string.activity_geetest_load_failed)}</div>';
         return;
       }
       initGeetest({

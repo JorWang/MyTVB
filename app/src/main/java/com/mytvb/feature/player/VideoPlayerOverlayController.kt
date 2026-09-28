@@ -62,7 +62,7 @@ class VideoPlayerOverlayController(
         val episodes = sessionCoordinator.getEpisodes()
         val selectedEpisodeIndex = sessionCoordinator.getSelectedEpisodeIndex()
         if (episodes.isEmpty()) {
-            Toast.makeText(activity, "当前暂无可选分集", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, activity.getString(R.string.player_no_episodes_toast), Toast.LENGTH_SHORT).show()
             return
         }
         if (episodes.firstOrNull()?.source == VideoPlayerViewModel.EpisodeCatalogSource.UGC_SEASON) {
@@ -100,14 +100,14 @@ class VideoPlayerOverlayController(
         titleView?.text = when (catalogSource) {
             VideoPlayerViewModel.EpisodeCatalogSource.UGC_SEASON -> {
                 val seasonTitle = latestVideoInfoProvider()?.view?.ugcSeason?.title.orEmpty()
-                "合集${if (seasonTitle.isNotBlank()) "·$seasonTitle" else ""}($currentPos/$totalCount)"
+                "${activity.getString(R.string.player_collection)}${if (seasonTitle.isNotBlank()) "·$seasonTitle" else ""}($currentPos/$totalCount)"
             }
             VideoPlayerViewModel.EpisodeCatalogSource.PGC_EPISODES -> {
                 val pgcTitle = latestVideoInfoProvider()?.view?.title.orEmpty()
                 "${if (pgcTitle.isNotBlank()) pgcTitle else activity.getString(R.string.choose_episode)}($currentPos/$totalCount)"
             }
             VideoPlayerViewModel.EpisodeCatalogSource.PAGES -> {
-                "选集($currentPos/$totalCount)"
+                "${activity.getString(R.string.choose_episode)}($currentPos/$totalCount)"
             }
         }
         val showMoreInfo = catalogSource == VideoPlayerViewModel.EpisodeCatalogSource.PAGES && currentVideoInfo != null
@@ -199,7 +199,7 @@ class VideoPlayerOverlayController(
 
         val seasonTitle = latestVideoInfoProvider()?.view?.ugcSeason?.title.orEmpty()
         titleView?.text =
-            "合集${if (seasonTitle.isNotBlank()) "·$seasonTitle" else ""}(${selectedEpisodeIndex + 1}/${episodes.size})"
+            "${activity.getString(R.string.player_collection)}${if (seasonTitle.isNotBlank()) "·$seasonTitle" else ""}(${selectedEpisodeIndex + 1}/${episodes.size})"
 
         val groups = episodes.chunked(SEASON_GROUP_SIZE)
         var activeGroup = (selectedEpisodeIndex / SEASON_GROUP_SIZE).coerceIn(0, groups.lastIndex)
@@ -457,7 +457,7 @@ class VideoPlayerOverlayController(
     ) {
         val video = resolveCurrentVideoInfo()
         if (video == null) {
-            Toast.makeText(activity, "当前视频信息未加载完成", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, activity.getString(R.string.player_video_info_not_loaded), Toast.LENGTH_SHORT).show()
             return
         }
         if (restorePlayerFocus) {
@@ -540,7 +540,7 @@ class VideoPlayerOverlayController(
         val aid = view?.aid ?: 0L
         val bvid = view?.bvid.orEmpty()
         if (aid <= 0L && bvid.isBlank()) {
-            Toast.makeText(activity, "当前视频信息未加载完成", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, activity.getString(R.string.player_video_info_not_loaded), Toast.LENGTH_SHORT).show()
             return
         }
         overlayCoordinator.rememberFocusRestoreTarget(PlayerOverlayCoordinator.FocusTarget.MORE_BUTTON)
@@ -566,7 +566,7 @@ class VideoPlayerOverlayController(
         val view = latestVideoInfoProvider()?.view
         val owner = view?.owner
         if (owner == null || owner.mid <= 0L) {
-            Toast.makeText(activity, "UP主信息未加载完成", Toast.LENGTH_SHORT).show()
+            Toast.makeText(activity, activity.getString(R.string.player_up_info_not_loaded), Toast.LENGTH_SHORT).show()
             return
         }
         overlayCoordinator.rememberFocusRestoreTarget(PlayerOverlayCoordinator.FocusTarget.OWNER_BUTTON)

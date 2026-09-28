@@ -1,6 +1,8 @@
 package com.mytvb.feature.player
 
+import android.content.Context
 import android.view.View
+import com.mytvb.R
 import com.mytvb.core.common.format.MediaFormatUtils
 import com.mytvb.core.common.format.NumberUtils
 import com.mytvb.core.common.log.AppLog
@@ -18,41 +20,41 @@ import androidx.media3.exoplayer.ExoPlayer
  */
 internal object PlayerScreenLogic {
 
-    fun buildDebugInfo(p: ExoPlayer): String {
+    fun buildDebugInfo(context: Context, p: ExoPlayer): String {
         val sb = StringBuilder()
         val videoFormat = p.videoFormat
         if (videoFormat != null) {
             val w = videoFormat.width
             val h = videoFormat.height
-            sb.appendLine("分辨率: ${w}x${h}${MediaFormatUtils.formatAspectRatio(w, h)}")
+            sb.appendLine(context.getString(R.string.player_debug_resolution_format, "${w}x${h}${MediaFormatUtils.formatAspectRatio(w, h)}"))
             val codec = MediaFormatUtils.formatCodecName(videoFormat.sampleMimeType)
             val bitrate = if (videoFormat.bitrate > 0) " ${videoFormat.bitrate / 1000}kbps" else ""
-            sb.appendLine("视频: $codec$bitrate")
+            sb.appendLine(context.getString(R.string.player_debug_video_format, "$codec$bitrate"))
         }
         val audioFormat = p.audioFormat
         if (audioFormat != null) {
             val codec = MediaFormatUtils.formatCodecName(audioFormat.sampleMimeType)
             val sr = if (audioFormat.sampleRate > 0) " ${audioFormat.sampleRate}Hz" else ""
-            sb.appendLine("音频: $codec$sr")
+            sb.appendLine(context.getString(R.string.player_debug_audio_format, "$codec$sr"))
         }
         if (p.duration > 0) {
             val pos = NumberUtils.formatTimeMs(p.currentPosition)
             val dur = NumberUtils.formatTimeMs(p.duration)
             val speed = p.playbackParameters.speed
-            sb.appendLine("进度: $pos / $dur (${speed}x)")
+            sb.appendLine(context.getString(R.string.player_debug_progress_format, "$pos / $dur (${speed}x)"))
         }
         val bufferedAhead = p.bufferedPosition - p.currentPosition
         if (bufferedAhead > 0) {
-            sb.appendLine("缓冲: ${"%.1f".format(bufferedAhead / 1000.0)}s")
+            sb.appendLine(context.getString(R.string.player_debug_buffer_format, "%.1f".format(bufferedAhead / 1000.0) + "s"))
         }
         val stateLabel = when (p.playbackState) {
-            Player.STATE_BUFFERING -> "缓冲中"
-            Player.STATE_READY -> if (p.playWhenReady) "播放中" else "暂停"
-            Player.STATE_ENDED -> "已结束"
+            Player.STATE_BUFFERING -> context.getString(R.string.player_state_buffering)
+            Player.STATE_READY -> if (p.playWhenReady) context.getString(R.string.player_state_playing) else context.getString(R.string.pause)
+            Player.STATE_ENDED -> context.getString(R.string.player_state_ended)
             else -> ""
         }
         if (stateLabel.isNotEmpty()) {
-            sb.append("状态: $stateLabel")
+            sb.append(context.getString(R.string.player_debug_state_format, stateLabel))
         }
         return sb.toString().trimEnd()
     }
@@ -82,6 +84,7 @@ internal object PlayerScreenLogic {
 
     /** 调试浮层文案；返回 null 表示应隐藏。 */
     fun debugOverlayText(
+        context: Context,
         showDebugInfo: Boolean,
         errorMessage: String?,
         player: Player?,
@@ -90,7 +93,7 @@ internal object PlayerScreenLogic {
         if (!showDebugInfo) return null
         if (!errorMessage.isNullOrBlank()) return errorMessage
         if (player == null || player.playbackState == Player.STATE_IDLE) return loadingText
-        return (player as? ExoPlayer)?.let(::buildDebugInfo) ?: loadingText
+        return (player as? ExoPlayer)?.let { buildDebugInfo(context, it) } ?: loadingText
     }
 
     fun postPlaybackProgressEvent(
@@ -161,10 +164,10 @@ internal object PlayerScreenLogic {
         return "$episodeTitle ｜ $videoTitle"
     }
 
-    fun buildHeaderMetaParts(video: VideoView): List<String> {
+    fun buildHeaderMetaParts(context: Context, video: VideoView): List<String> {
         return buildList {
             video.owner?.name?.takeIf { it.isNotBlank() }?.let(::add)
-            video.stat?.view?.takeIf { it > 0 }?.let { add("${NumberUtils.formatCount(it)}播放") }
+            video.stat?.view?.takeIf { it > 0 }?.let { add(context.getString(R.string.player_view_count_play_format, NumberUtils.formatCount(it))) }
             if (video.pubDate > 0) {
                 add(TimeUtils.formatTime(video.pubDate))
             }

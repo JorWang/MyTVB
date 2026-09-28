@@ -85,7 +85,7 @@ class PlayerActionDialog(
                     }
                 }.onFailure {
                     AppLog.e("PlayerAction", "like failed", it)
-                    toast(it.message ?: "操作失败")
+                    toast(it.message ?: context.getString(R.string.dialog_action_failed))
                 }
             }
         }
@@ -103,13 +103,13 @@ class PlayerActionDialog(
                     if (response.isSuccess) {
                         isCoined = true
                         renderState()
-                        toast("投币成功")
+                        toast(context.getString(R.string.dialog_coin_success))
                     } else {
                         handleActionError(response.code, response.message)
                     }
                 }.onFailure {
                     AppLog.e("PlayerAction", "coin failed", it)
-                    toast(it.message ?: "操作失败")
+                    toast(it.message ?: context.getString(R.string.dialog_action_failed))
                 }
             }
         }
@@ -128,14 +128,14 @@ class PlayerActionDialog(
             scope.launch {
                 val currentUserMid = sessionGateway.getUserInfo()?.mid?.takeIf { it > 0L } ?: ownerMid
                 if (currentUserMid <= 0L) {
-                    toast("收藏夹信息未加载完成")
+                    toast(context.getString(R.string.dialog_favorite_folder_not_loaded))
                     return@launch
                 }
                 val folderResult = favoriteRepository.getFavoriteFolders(currentUserMid)
                 val folders = folderResult.getOrNull()?.data?.list.orEmpty()
                 val defaultFolder = folders.firstOrNull()
                 if (defaultFolder == null) {
-                    toast("暂无可用收藏夹")
+                    toast(context.getString(R.string.dialog_no_available_favorite_folder))
                     return@launch
                 }
                 val folderId = defaultFolder.id.toString()
@@ -149,13 +149,13 @@ class PlayerActionDialog(
                         isFavorited = !isFavorited
                         renderState()
                         toast(
-                            if (isFavorited) context.getString(R.string.collection_)
-                            else "取消收藏"
+                        if (isFavorited) context.getString(R.string.collection_)
+                        else context.getString(R.string.dialog_unfavorite)
                         )
                     } else {
                         handleActionError(response.code, response.errorMessage)
                     }
-                }.onFailure { toast(it.message ?: "操作失败") }
+                }.onFailure { toast(it.message ?: context.getString(R.string.dialog_action_failed)) }
             }
         }
         binding.buttonCollection.setOnLongClickListener {
@@ -176,7 +176,7 @@ class PlayerActionDialog(
                         isFavorited = true
                         renderState()
                         if (response.data?.isRisk == true) {
-                            Toast.makeText(context, "三连成功，但账号被标记风控，后续操作可能受限", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, R.string.dialog_triple_success_risk_marked, Toast.LENGTH_LONG).show()
                         } else {
                             toast(context.getString(R.string.triple_action))
                         }
@@ -185,7 +185,7 @@ class PlayerActionDialog(
                     }
                 }.onFailure {
                     AppLog.e("PlayerActionDialog", "tripleAction failed", it)
-                    toast(it.message ?: "操作失败")
+                    toast(it.message ?: context.getString(R.string.dialog_action_failed))
                 }
             }
         }
@@ -212,7 +212,7 @@ class PlayerActionDialog(
                     }
                 }.onFailure {
                     AppLog.e("PlayerAction", "watchLater failed", it)
-                    toast(it.message ?: "操作失败")
+                    toast(it.message ?: context.getString(R.string.dialog_action_failed))
                 }
             }
         }
@@ -326,7 +326,7 @@ class PlayerActionDialog(
     private fun showFavoriteFolderDialog() {
         val currentUserMid = sessionGateway.getUserInfo()?.mid?.takeIf { it > 0L } ?: ownerMid
         if (currentUserMid <= 0L) {
-            toast("收藏夹信息未加载完成")
+            toast(context.getString(R.string.dialog_favorite_folder_not_loaded))
             return
         }
         scope.launch {
@@ -338,12 +338,12 @@ class PlayerActionDialog(
                     }
                     val folders = response.data?.list.orEmpty()
                     if (folders.isEmpty()) {
-                        toast("暂无可用收藏夹")
+                        toast(context.getString(R.string.dialog_no_available_favorite_folder))
                         return@onSuccess
                     }
                     displayFavoriteFolderChooser(folders)
                 }
-                .onFailure { toast(it.message ?: "加载收藏夹失败") }
+                .onFailure { toast(it.message ?: context.getString(R.string.dialog_load_favorite_folder_failed)) }
         }
     }
 
@@ -373,15 +373,15 @@ class PlayerActionDialog(
                         renderState()
                         toast(
                             if (isFavorited) {
-                                "已收藏到 ${folder.title}"
+                                context.getString(R.string.dialog_favorited_to_format, folder.title)
                             } else {
-                                "已从 ${folder.title} 取消收藏"
+                                context.getString(R.string.dialog_unfavorited_from_format, folder.title)
                             }
                         )
                     } else {
                         handleActionError(response.code, response.errorMessage)
                     }
-                }.onFailure { toast(it.message ?: "操作失败") }
+                }.onFailure { toast(it.message ?: context.getString(R.string.dialog_action_failed)) }
             }
         }
 
@@ -461,17 +461,17 @@ class PlayerActionDialog(
                 dismiss()
             }
             is ActionError.CsrfMismatch -> {
-                toast("操作失败，请稍后重试")
+                toast(context.getString(R.string.dialog_action_failed_retry_later))
             }
             is ActionError.RiskControl -> {
-                Toast.makeText(context, "账号被风控了，请到B站官方App或网页端完成验证后再试", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, R.string.dialog_risk_control_verify_hint, Toast.LENGTH_LONG).show()
             }
             is ActionError.FrequencyLimit -> {
                 toast(error.message)
             }
             is ActionError.Other -> toast(error.message)
             is ActionError.CsrfMissing -> {
-                toast("登录凭据异常，请稍后重试")
+                toast(context.getString(R.string.dialog_credential_error_retry_later))
             }
         }
     }

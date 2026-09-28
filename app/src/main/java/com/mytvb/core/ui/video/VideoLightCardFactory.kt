@@ -270,10 +270,10 @@ class VideoCoverMetaOverlayView @JvmOverloads constructor(
         var right = width - metrics.badgeEnd.toFloat()
         val top = metrics.badgeTop.toFloat()
         if (showChargeBadge) {
-            right = drawBadge(canvas, "充电专属", right, top, 0xFFF6A11B.toInt()) - metrics.badgeGap
+            right = drawBadge(canvas, context.getString(R.string.core_badge_charge_exclusive), right, top, 0xFFF6A11B.toInt()) - metrics.badgeGap
         }
         if (showInteractionBadge) {
-            drawBadge(canvas, "互动", right, top, 0xFFFB7299.toInt())
+            drawBadge(canvas, context.getString(R.string.core_badge_interaction), right, top, 0xFFFB7299.toInt())
         }
     }
 

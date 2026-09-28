@@ -73,7 +73,6 @@ import androidx.media3.exoplayer.source.LoadEventInfo
 import androidx.media3.exoplayer.source.MediaLoadData
 import androidx.media3.common.C
 
-private const val RISK_CONTROL_USER_HINT = "账号被风控了，请到设置中完成验证"
 private val riskControlUserHintShown = AtomicBoolean(false)
 
 @UnstableApi
@@ -557,7 +556,7 @@ class VideoPlayerFragment : Fragment() {
         )
         relatedAdapter.setOnItemClickListener { _, item ->
             if (isVideoBlockedByMinorProtection(item)) {
-                requireContext().toast("青少年模式已拦截该视频")
+                requireContext().toast(getString(R.string.player_minor_protection_blocked))
             } else {
                 playerView.hideController()
                 hideContentPanel()
@@ -594,7 +593,7 @@ class VideoPlayerFragment : Fragment() {
             textMoreTitle = textMoreTitle,
             onPlayEpisode = { index ->
                 if (!sessionCoordinator.canPlayEpisode(index)) {
-                    requireContext().toast("青少年模式已拦截该视频")
+                    requireContext().toast(getString(R.string.player_minor_protection_blocked))
                 } else {
                     playerView.hideController()
                     viewModel.playEpisode(index)
@@ -602,7 +601,7 @@ class VideoPlayerFragment : Fragment() {
             },
             onPlayRelatedVideo = { video, playQueue ->
                 if (isVideoBlockedByMinorProtection(video)) {
-                    requireContext().toast("青少年模式已拦截该视频")
+                    requireContext().toast(getString(R.string.player_minor_protection_blocked))
                 } else {
                     playerView.hideController()
                     sessionCoordinator.replacePlayQueue(playQueue)
@@ -687,7 +686,7 @@ class VideoPlayerFragment : Fragment() {
             override fun peekDouyinNext(): DouyinModePreview? {
                 return douyinModeManager.peekNext()?.toDouyinPreview()
                     ?: if (!douyinModeManager.hasList()) {
-                        DouyinModePreview(title = "加载推荐中...", coverUrl = "")
+                        DouyinModePreview(title = getString(R.string.player_loading_recommendations), coverUrl = "")
                     } else {
                         null
                     }
@@ -835,7 +834,7 @@ class VideoPlayerFragment : Fragment() {
                 playerView.setRepeatMode(currentPlayer.repeatMode)
                 Toast.makeText(
                     requireContext(),
-                    if (currentPlayer.repeatMode == Player.REPEAT_MODE_ONE) "单集循环" else "顺序播放",
+                    if (currentPlayer.repeatMode == Player.REPEAT_MODE_ONE) getString(R.string.player_repeat_mode_one) else getString(R.string.player_repeat_mode_all),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -1019,7 +1018,7 @@ class VideoPlayerFragment : Fragment() {
                     viewModel.riskControlTryLookBypass.collect { bypassed ->
                         if (bypassed != true) return@collect
                         if (riskControlUserHintShown.compareAndSet(false, true)) {
-                            Toast.makeText(requireContext(), RISK_CONTROL_USER_HINT, Toast.LENGTH_LONG).show()
+                            Toast.makeText(requireContext(), getString(R.string.player_risk_control_hint), Toast.LENGTH_LONG).show()
                         }
                     }
                 }
@@ -1224,7 +1223,14 @@ class VideoPlayerFragment : Fragment() {
                             is VideoPlayerViewModel.SponsorSkipUiState.Hidden -> {}
                             is VideoPlayerViewModel.SponsorSkipUiState.ShowButton -> {}
                             is VideoPlayerViewModel.SponsorSkipUiState.AutoSkipped -> {
-                                context?.toast("已跳过: ${state.segment.categoryName()}")
+                                context?.let { ctx ->
+                                    ctx.toast(
+                                        ctx.getString(
+                                            R.string.player_skip_segment_toast_format,
+                                            state.segment.categoryName(ctx)
+                                        )
+                                    )
+                                }
                                 player?.seekTo(state.segment.endTimeMs)
                             }
                         }
@@ -1317,6 +1323,7 @@ class VideoPlayerFragment : Fragment() {
 
     private fun renderDebugState() {
         val text = PlayerScreenLogic.debugOverlayText(
+            context = requireContext(),
             showDebugInfo = ::playerSettings.isInitialized && playerSettings.showDebugInfo,
             errorMessage = latestErrorMessage,
             player = player,
@@ -1332,7 +1339,7 @@ class VideoPlayerFragment : Fragment() {
     }
 
     private fun buildDebugInfo(p: ExoPlayer): String {
-        return PlayerScreenLogic.buildDebugInfo(p)
+        return PlayerScreenLogic.buildDebugInfo(requireContext(), p)
     }
 
     private fun applyPlayerSettings(settings: PlayerSettings) {
@@ -1459,7 +1466,7 @@ class VideoPlayerFragment : Fragment() {
         val video = latestVideoInfo?.view ?: return
         val selectedEpisode = sessionCoordinator.getSelectedEpisode()
         playerView.setTitle(PlayerScreenLogic.buildHeaderTitle(video.title, selectedEpisode))
-        playerView.setSubTitle(PlayerScreenLogic.buildHeaderMetaParts(video).joinToString(" · "))
+        playerView.setSubTitle(PlayerScreenLogic.buildHeaderMetaParts(requireContext(), video).joinToString(" · "))
     }
 
 
@@ -1546,7 +1553,7 @@ class VideoPlayerFragment : Fragment() {
         playerView.setSubTitle(
             buildList {
                 video.owner?.name?.takeIf { it.isNotBlank() }?.let(::add)
-                video.viewCount.takeIf { it > 0L }?.let { add("${NumberUtils.formatCount(it)}播放") }
+                video.viewCount.takeIf { it > 0L }?.let { add(getString(R.string.player_view_count_play_format, NumberUtils.formatCount(it))) }
                 val publishTime = when {
                     video.pubDate > 0L -> video.pubDate
                     video.createTime > 0L -> video.createTime
@@ -1739,7 +1746,7 @@ class VideoPlayerFragment : Fragment() {
         if (next == null) {
             playerView.cancelDouyinPageTransition()
             playerView.showDouyinBoundaryBounce(1)
-            Toast.makeText(requireContext(), "该视频无推荐", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.player_no_recommendation), Toast.LENGTH_SHORT).show()
             return true
         }
         playDouyinVideo(next, direction = 1)
@@ -1773,7 +1780,7 @@ class VideoPlayerFragment : Fragment() {
     private fun playDouyinVideo(video: com.mytvb.model.video.VideoModel?, direction: Int = 0) {
         if (video == null) return
         if (isVideoBlockedByMinorProtection(video)) {
-            requireContext().toast("青少年模式已拦截该视频")
+            requireContext().toast(getString(R.string.player_minor_protection_blocked))
             return
         }
         playerView.hideController()
@@ -1900,7 +1907,7 @@ class VideoPlayerFragment : Fragment() {
                 if (douyinPendingNextAfterInit) {
                     playerView.cancelDouyinPageTransition()
                     playerView.showDouyinBoundaryBounce(1)
-                    Toast.makeText(requireContext(), "该视频无推荐", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), getString(R.string.player_no_recommendation), Toast.LENGTH_SHORT).show()
                 }
                 douyinPendingNextAfterInit = false
                 return@launch
@@ -1912,7 +1919,7 @@ class VideoPlayerFragment : Fragment() {
                 if (next == null) {
                     playerView.cancelDouyinPageTransition()
                     playerView.showDouyinBoundaryBounce(1)
-                    Toast.makeText(requireContext(), "该视频无推荐", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), getString(R.string.player_no_recommendation), Toast.LENGTH_SHORT).show()
                 } else {
                     playDouyinVideo(next, direction = 1)
                 }

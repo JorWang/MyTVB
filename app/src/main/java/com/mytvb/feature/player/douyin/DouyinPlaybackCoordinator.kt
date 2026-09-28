@@ -1,6 +1,8 @@
 package com.mytvb.feature.player.douyin
 
+import android.content.Context
 import androidx.lifecycle.LifecycleCoroutineScope
+import com.mytvb.R
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.feature.player.PlayerSessionCoordinator
 import com.mytvb.feature.player.PlaybackPreloadTarget
@@ -25,6 +27,7 @@ internal class DouyinPlaybackCoordinator(
     private val playerView: MyPlayerView,
     private val viewModel: VideoPlayerViewModel,
     private val lifecycleScope: LifecycleCoroutineScope,
+    private val context: Context,
     private val host: Host
 ) {
 
@@ -64,7 +67,7 @@ internal class DouyinPlaybackCoordinator(
         if (next == null) {
             playerView.cancelDouyinPageTransition()
             playerView.showDouyinBoundaryBounce(1)
-            host.toast("该视频无推荐")
+            host.toast(context.getString(R.string.player_no_recommendation))
             return true
         }
         playVideo(next, direction = 1)
@@ -93,7 +96,7 @@ internal class DouyinPlaybackCoordinator(
     fun peekNextPreview(): DouyinModePreview? {
         return douyinModeManager.peekNext()?.toDouyinPreview()
             ?: if (!douyinModeManager.hasList()) {
-                DouyinModePreview(title = "加载推荐中...", coverUrl = "")
+                DouyinModePreview(title = context.getString(R.string.player_loading_recommendations), coverUrl = "")
             } else {
                 null
             }
@@ -105,7 +108,7 @@ internal class DouyinPlaybackCoordinator(
     private fun playVideo(video: VideoModel?, direction: Int = 0) {
         if (video == null) return
         if (host.isVideoBlockedByMinorProtection(video)) {
-            host.toast("青少年模式已拦截该视频")
+            host.toast(context.getString(R.string.player_minor_protection_blocked))
             return
         }
         playerView.hideController()
@@ -231,7 +234,7 @@ internal class DouyinPlaybackCoordinator(
                 if (pendingNextAfterInit) {
                     playerView.cancelDouyinPageTransition()
                     playerView.showDouyinBoundaryBounce(1)
-                    host.toast("该视频无推荐")
+                    host.toast(context.getString(R.string.player_no_recommendation))
                 }
                 pendingNextAfterInit = false
                 return@launch
@@ -243,7 +246,7 @@ internal class DouyinPlaybackCoordinator(
                 if (next == null) {
                     playerView.cancelDouyinPageTransition()
                     playerView.showDouyinBoundaryBounce(1)
-                    host.toast("该视频无推荐")
+                    host.toast(context.getString(R.string.player_no_recommendation))
                 } else {
                     playVideo(next, direction = 1)
                 }

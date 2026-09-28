@@ -8,6 +8,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView.NO_POSITION
+import com.mytvb.R
 import com.mytvb.model.video.VideoModel
 import com.mytvb.core.ui.base.BaseVideoAdapter
 import com.mytvb.core.ui.base.BaseVideoViewHolder
@@ -164,7 +165,7 @@ class DynamicVideoAdapter(
         fun bind(item: VideoModel) {
             currentItem = item
             val ownerName = item.authorName
-            val publishText = TimeUtils.formatRelativeTime(item.pubDate)
+            val publishText = TimeUtils.formatRelativeTime(views.root.context, item.pubDate)
 
             val coverUrl: String
             if (item.bangumi != null) {
@@ -196,7 +197,7 @@ class DynamicVideoAdapter(
                         views.textLayer.setOwner(
                             ownerText = ownerLine,
                             showAvatar = false,
-                            badgeText = "竖屏"
+                            badgeText = views.root.context.getString(R.string.badge_portrait)
                         )
                     }
                 } else null
@@ -206,7 +207,7 @@ class DynamicVideoAdapter(
                 views.textLayer.setOwner(
                     ownerText = ownerLine,
                     showAvatar = !item.isPortrait,
-                    badgeText = if (item.isPortrait) "竖屏" else ""
+                    badgeText = if (item.isPortrait) views.root.context.getString(R.string.badge_portrait) else ""
                 )
             } else {
                 views.textLayer.setOwner(
@@ -216,9 +217,9 @@ class DynamicVideoAdapter(
             }
 
             views.coverMetaOverlay.bind(
-                playCountText = NumberUtils.formatCount(item.viewCount),
+                playCountText = NumberUtils.formatCount(views.root.context, item.viewCount),
                 showPlayCount = true,
-                danmakuText = NumberUtils.formatCount(item.danmakuCount),
+                danmakuText = NumberUtils.formatCount(views.root.context, item.danmakuCount),
                 showDanmakuCount = true,
                 durationText = NumberUtils.formatDuration(item.durationValue.coerceAtLeast(0L)),
                 showChargeBadge = item.isChargingExclusive,

@@ -1,7 +1,9 @@
 package com.mytvb.feature.player
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mytvb.R
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.feature.player.danmaku.LiveDanmakuManager
 import com.mytvb.model.dm.DmModel
@@ -22,7 +24,8 @@ import java.util.Locale
 
 class LivePlayerViewModel(
     private val repository: LiveRepository,
-    private val danmakuManager: LiveDanmakuManager
+    private val danmakuManager: LiveDanmakuManager,
+    private val appContext: Context
 ) : ViewModel() {
 
     companion object {
@@ -101,7 +104,7 @@ class LivePlayerViewModel(
                             } ?: mappedQualities.firstOrNull()
                         }
                     } else {
-                        _error.value = "无法获取直播流地址"
+                        _error.value = appContext.getString(R.string.live_error_no_stream_url)
                     }
 
                     launchSupplementaryCalls(roomId)
@@ -110,7 +113,7 @@ class LivePlayerViewModel(
                     danmakuManager.start(roomId)
                 },
                 onFailure = { e ->
-                    _error.value = e.message ?: "加载直播失败"
+                    _error.value = e.message ?: appContext.getString(R.string.live_error_load_failed)
                 }
             )
 
@@ -190,7 +193,7 @@ class LivePlayerViewModel(
         val mapped = durl.orEmpty().mapIndexed { idx, item ->
             LiveLineInfo(
                 index = idx,
-                name = item.cdnName.ifBlank { "线路${idx + 1}" },
+                name = item.cdnName.ifBlank { appContext.getString(R.string.live_line_fallback_name_format, idx + 1) },
                 url = item.url
             )
         }
@@ -208,7 +211,7 @@ class LivePlayerViewModel(
                         applyLines(data.durl)
                     },
                     onFailure = { e ->
-                        _error.value = e.message ?: "切换画质失败"
+                        _error.value = e.message ?: appContext.getString(R.string.live_error_switch_quality_failed)
                     }
                 )
             }
@@ -229,10 +232,10 @@ class LivePlayerViewModel(
             repository.getLivePlayInfo(roomId).fold(
                 onSuccess = { data ->
                     applyLines(data.durl)
-                    _refreshEvent.trySend("刷新成功")
+                    _refreshEvent.trySend(appContext.getString(R.string.live_refresh_success))
                 },
                 onFailure = { e ->
-                    _error.value = e.message ?: "刷新直播失败"
+                    _error.value = e.message ?: appContext.getString(R.string.live_error_refresh_failed)
                 }
             )
         }
@@ -248,7 +251,7 @@ class LivePlayerViewModel(
                     applyLines(data.durl)
                 },
                 onFailure = { e ->
-                    _error.value = e.message ?: "重试失败"
+                    _error.value = e.message ?: appContext.getString(R.string.live_error_retry_failed)
                 }
             )
             _isLoading.value = false

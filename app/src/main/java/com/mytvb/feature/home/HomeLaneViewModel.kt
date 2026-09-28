@@ -3,6 +3,8 @@ package com.mytvb.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import android.os.SystemClock
+import com.mytvb.MyBLBLApplication
+import com.mytvb.R
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.model.lane.HomeLaneSection
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -114,7 +116,8 @@ class HomeLaneViewModel(
                     loadingInitial = false,
                     refreshing = false,
                     appending = false,
-                    errorMessage = throwable.message ?: "分区加载失败",
+                    errorMessage = throwable.message
+                        ?: MyBLBLApplication.instance.getString(R.string.home_lane_load_failed),
                     listChange = FeedListChange.NONE
                 )
             }

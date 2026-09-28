@@ -1,5 +1,8 @@
 package com.mytvb.feature.player.sponsor
 
+import android.content.Context
+import com.mytvb.R
+
 data class SponsorSegment(
     val segment: List<Float> = emptyList(),
     val UUID: String = "",
@@ -14,6 +17,23 @@ data class SponsorSegment(
     val endTimeMs: Long get() = ((segment.getOrNull(1) ?: 0f) * 1000).toLong()
     val isSkipType: Boolean get() = actionType == "skip"
 
+    /** 本地化类别的显示名（推荐 UI 层使用）。 */
+    fun categoryName(context: Context): String = when (category) {
+        CATEGORY_SPONSOR -> context.getString(R.string.player_sponsor_category_sponsor)
+        CATEGORY_INTRO -> context.getString(R.string.player_sponsor_category_intro)
+        CATEGORY_OUTRO -> context.getString(R.string.player_sponsor_category_outro)
+        CATEGORY_SELF_PROMO -> context.getString(R.string.player_sponsor_category_self_promo)
+        CATEGORY_INTERACTION -> context.getString(R.string.player_sponsor_category_interaction)
+        CATEGORY_PREVIEW -> context.getString(R.string.player_sponsor_category_preview)
+        CATEGORY_MUSIC_OFFTOPIC -> context.getString(R.string.player_sponsor_category_music_offtopic)
+        CATEGORY_POI_HIGHLIGHT -> context.getString(R.string.player_sponsor_category_poi_highlight)
+        CATEGORY_FILLER -> context.getString(R.string.player_sponsor_category_filler)
+        CATEGORY_PADDING -> context.getString(R.string.player_sponsor_category_padding)
+        CATEGORY_EXCLUSIVE_ACCESS -> context.getString(R.string.player_sponsor_category_exclusive_access)
+        else -> category
+    }
+
+    /** 中文类别的显示名（兼容旧调用方；新代码请用 [categoryName]）。 */
     fun categoryName(): String = when (category) {
         CATEGORY_SPONSOR -> "赞助/恰饭"
         CATEGORY_INTRO -> "过场/开场动画"

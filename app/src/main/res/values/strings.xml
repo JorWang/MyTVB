@@ -14,9 +14,6 @@
     <string name="animation">番剧</string>
     <string name="video">视频</string>
     <string name="video_watch_progress_format">%1$s/%2$s</string>
-    <string name="dynamic_count_">%d\n动态</string>
-    <string name="follower_count_">%d\n粉丝</string>
-    <string name="following_count_">%d\n关注</string>
     <string name="app_exit">再按一次返回退出应用</string>
     <string name="usage_tip_title">使用提示</string>
     <string name="usage_tip_content">1. 本应用仅供学习研究使用，请勿用于商业用途，避免侵犯哔哩哔哩相关权益。&lt;br&gt;&lt;br&gt;2. 应用支持直播入口和青少年模式，均可在设置中开启或关闭。&lt;br&gt;&lt;br&gt;3. 青少年模式关闭方法：&lt;b&gt;&lt;font color=\"#e74c3c\"&gt;遥控器依次按「上上下下左右左右」；触摸屏连续快速点击验证码区域 7 次即可通过验证。&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;br&gt;4. 长按视频卡片可进行「稍后再看」等更多操作。</string>
@@ -401,4 +398,123 @@
     <string name="wednesday">周三</string>
     <string name="zone">分区</string>
     <string name="teen_rest_countdown">还需休息 %1$02d:%2$02d</string>
+
+    <!-- ===== 多语言：设置项存储值显示映射（存储值保持中文字面量，仅显示层翻译） ===== -->
+    <string name="setting_value_auto">自动</string>
+    <string name="setting_value_low">低</string>
+    <string name="setting_value_medium">中</string>
+    <string name="setting_value_high">高</string>
+    <string name="setting_value_unlimited">不限制</string>
+    <string name="setting_value_full_screen">全屏</string>
+    <string name="setting_value_black">黑色</string>
+    <string name="setting_value_white">白色</string>
+    <string name="setting_value_classic">经典主题</string>
+    <string name="setting_value_pink">粉色</string>
+    <string name="setting_value_blue">蓝色</string>
+    <string name="setting_value_purple">紫色</string>
+    <string name="setting_value_red">红色</string>
+    <string name="setting_value_image_low">低尺寸</string>
+    <string name="setting_value_image_medium">中尺寸</string>
+    <string name="setting_value_image_high">高尺寸</string>
+    <string name="setting_value_compact">紧凑</string>
+    <string name="setting_value_standard">标准</string>
+    <string name="setting_value_loose">宽松</string>
+    <string name="setting_value_extra_loose">特宽</string>
+    <string name="setting_value_small">小</string>
+    <string name="setting_value_large">大</string>
+    <string name="setting_value_x_large">特大</string>
+    <string name="setting_value_xx_large">超大</string>
+    <string name="setting_after_play_none">什么都不做</string>
+    <string name="setting_after_play_recommend">播推荐视频</string>
+    <string name="setting_after_play_next_in_list">播列表中的下一个</string>
+    <string name="setting_after_play_next_in_collection">播放合集中的下一个</string>
+    <string name="setting_subtitle_off">关闭字幕</string>
+    <string name="setting_subtitle_on">开启字幕</string>
+    <string name="setting_subtitle_auto">自动字幕</string>
+    <string name="setting_audio_dolby_atmos">杜比全景声</string>
+    <string name="setting_audio_hi_res">Hi-Res无损</string>
+    <string name="setting_quality_dolby_vision">杜比视界</string>
+    <string name="setting_quality_ai_restore">智能修复</string>
+    <string name="setting_minutes_format">%d分钟</string>
+
+    <!-- ===== 多语言：界面语言切换 ===== -->
+    <string name="ui_language">界面语言</string>
+    <string name="follow_system">跟随系统</string>
+
+    <!-- ===== 多语言：设置页标题 ===== -->
+    <string name="x5_core_replace">X5内核替换</string>
+    <string name="sponsor_block">空降助手</string>
+    <string name="audio_balance">音量均衡</string>
+    <string name="seamless_quality_switch">无缝切换清晰度</string>
+    <string name="app_version">应用版本</string>
+    <string name="check_update">检查更新</string>
+    <string name="device_model">设备型号</string>
+    <string name="system_version">系统版本</string>
+    <string name="sdk_version">SDK版本</string>
+    <string name="cpu_arch">CPU架构</string>
+    <string name="screen_resolution">屏幕分辨率</string>
+    <string name="hardware_decode">硬解支持</string>
+    <string name="log_record">日志记录</string>
+    <string name="debug_log">调试日志</string>
+
+    <!-- ===== 多语言：设置页状态与提示 ===== -->
+    <string name="toast_setting_value_format">%1$s：%2$s</string>
+    <string name="toast_cache_cleared">缓存已清除</string>
+    <string name="toast_try_later">请稍后再试</string>
+    <string name="unknown_error">未知错误</string>
+    <string name="x5_installed_toast">X5 内核已安装</string>
+    <string name="processing_toast">正在处理中，请稍候…</string>
+    <string name="x5_downloading_title">正在下载 X5 内核</string>
+    <string name="x5_status_downloading">下载中…</string>
+    <string name="x5_status_installed_restart">✓ 已安装（重启中）</string>
+    <string name="x5_status_install_failed">安装失败，点击重试</string>
+    <string name="x5_status_installed_live">✓ 已安装（直播用 X5 内核）</string>
+    <string name="x5_status_downloaded">已下载，点击安装</string>
+    <string name="x5_status_not_installed">未安装</string>
+    <string name="x5_status_cancelled">已取消</string>
+    <string name="update_found_new">发现新版本</string>
+    <string name="update_download_action">下载更新</string>
+    <string name="update_downloading_title">正在下载更新</string>
+    <string name="connecting">连接中…</string>
+    <string name="retrying_format">连接失败，正在重试（%1$d/%2$d）…</string>
+    <string name="net_timeout_toast">网络连接超时，请检查网络后重试</string>
+    <string name="net_unavailable_toast">网络不可用，请检查网络连接</string>
+    <string name="net_error_toast">网络异常，请稍后重试</string>
+    <string name="download_failed_toast">下载失败，请稍后重试</string>
+    <string name="update_check_failed_format">检查失败：%1$s</string>
+    <string name="update_click_to_check">点击检查</string>
+    <string name="update_checking">检查中…</string>
+    <string name="update_latest_format">已是最新版（%1$s）</string>
+    <string name="update_new_version_format">新版本 %1$s</string>
+    <string name="update_check_failed">检查失败</string>
+    <string name="log_enabled_toast">日志记录：%1$s</string>
+
+    <!-- ===== 多语言：风控验证 ===== -->
+    <string name="risk_status_passed">已通过</string>
+    <string name="risk_status_pending">待验证</string>
+    <string name="risk_status_none">无</string>
+    <string name="risk_dialog_desc">当账号被B站风控时，播放视频会触发人机验证。</string>
+    <string name="risk_verify_status">验证状态：</string>
+    <string name="risk_not_verified">未验证</string>
+    <string name="risk_expire_time_format">到期时间：%1$s</string>
+    <string name="risk_voucher_label">验证凭证：</string>
+    <string name="risk_voucher_saved">已保存</string>
+    <string name="risk_voucher_none">暂无</string>
+    <string name="risk_saved_time_format">保存时间：%1$s</string>
+    <string name="risk_dialog_tip">提示：点赞/投币/三连等操作被拦截时，需到B站官方App或网页端完成验证。</string>
+    <string name="risk_close">关闭</string>
+    <string name="risk_edit_voucher">编辑凭证</string>
+    <string name="risk_start_verify">开始验证</string>
+    <string name="risk_fill_voucher">填写凭证</string>
+    <string name="edit_voucher_title">编辑验证凭证</string>
+    <string name="voucher_hint">请粘贴验证凭证</string>
+    <string name="voucher_cleared">凭证已清除</string>
+    <string name="voucher_saved_toast">凭证已保存</string>
+    <string name="verify_success">验证成功</string>
+
+    <!-- ===== 多语言：青少年保护验证 ===== -->
+    <string name="konami_wrong">魂斗罗秘籍错误</string>
+    <string name="konami_hint">使用遥控器方向键输入魂斗罗秘籍才能关闭！</string>
+    <string name="sponsor_testing">正在测试…</string>
+    <string name="confirm_save">保存</string>
 </resources>

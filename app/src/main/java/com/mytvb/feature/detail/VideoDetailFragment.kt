@@ -279,7 +279,7 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
                 }
             }.onFailure { e ->
                 AppLog.e(TAG, "loadVideoDetail: failed", e)
-                showError(e.message ?: "加载失败")
+                showError(e.message ?: getString(R.string.detail_load_failed))
             }
         }
     }
@@ -373,7 +373,7 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
             val items = oldRow.items
             val currentIdx = items.indexOfFirst { it.aid == view.aid }.let { if (it >= 0) it + 1 else 0 }
             val seasonTitle = buildString {
-                append("合集")
+                append(getString(R.string.detail_ugc_collection))
                 if (rawTitle.isNotBlank()) append("·").append(rawTitle)
                 append("（").append(currentIdx).append("/").append(items.size).append("）")
             }
@@ -414,7 +414,7 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
                 val rawTitle = view.ugcSeason?.title.orEmpty()
                 val currentIdx = ordered.indexOfFirst { it.aid == view.aid }.let { if (it >= 0) it + 1 else 0 }
                 val seasonTitle = buildString {
-                    append("合集")
+                    append(getString(R.string.detail_ugc_collection))
                     if (rawTitle.isNotBlank()) {
                         append("·").append(rawTitle)
                     }
@@ -522,12 +522,15 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
                     if (response.isSuccess) {
                         val newAttr = if (action == 1) 2 else 0
                         holder.updateFollowState(newAttr)
-                        toast(if (action == 1) "关注成功" else "已取消关注")
+                        toast(
+                            if (action == 1) getString(R.string.toast_follow_success)
+                            else getString(R.string.toast_cancel_follow_success)
+                        )
                     } else {
                         toast(response.errorMessage)
                     }
                 }
-                .onFailure { toast(it.message ?: "操作失败") }
+                .onFailure { toast(it.message ?: getString(R.string.toast_operation_failed)) }
         }
     }
 
@@ -615,7 +618,7 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
             val rawTitle = view.ugcSeason?.title.orEmpty()
             val currentIdx = ordered.indexOfFirst { it.aid == view.aid }.let { if (it >= 0) it + 1 else 0 }
             val seasonTitle = buildString {
-                append("合集")
+                append(getString(R.string.detail_ugc_collection))
                 if (rawTitle.isNotBlank()) {
                     append("·").append(rawTitle)
                 }
@@ -736,7 +739,7 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
                     toast(response.message)
                 }
             }.onFailure {
-                toast(it.message ?: "操作失败")
+                toast(it.message ?: getString(R.string.toast_operation_failed))
             }
         }
     }
@@ -760,12 +763,12 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
                 if (response.isSuccess) {
                     isCoined = true
                     updateActionButtonsDirectly()
-                    toast("投币成功")
+                    toast(getString(R.string.toast_coin_success))
                 } else {
                     toast(response.message)
                 }
             }.onFailure {
-                toast(it.message ?: "操作失败")
+                toast(it.message ?: getString(R.string.toast_operation_failed))
             }
         }
     }
@@ -780,14 +783,14 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
             val currentUserMid = sessionGateway.getUserInfo()?.mid?.takeIf { it > 0L }
                 ?: videoView?.owner?.mid ?: videoModel?.owner?.mid ?: 0L
             if (currentUserMid <= 0L) {
-                toast("收藏夹信息未加载完成")
+                toast(getString(R.string.toast_favorite_folder_not_ready))
                 return@launch
             }
             val folderResult = favoriteRepository.getFavoriteFolders(currentUserMid)
             val folders = folderResult.getOrNull()?.data?.list.orEmpty()
             val defaultFolder = folders.firstOrNull()
             if (defaultFolder == null) {
-                toast("暂无可用收藏夹")
+                toast(getString(R.string.toast_no_available_folder))
                 return@launch
             }
             val folderId = defaultFolder.id.toString()
@@ -800,11 +803,14 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
                 if (response.isSuccess) {
                     isFavorited = !isFavorited
                     updateActionButtonsDirectly()
-                    toast(if (isFavorited) getString(R.string.collection_) else "取消收藏")
+                    toast(
+                        if (isFavorited) getString(R.string.collection_)
+                        else getString(R.string.toast_cancel_favorite)
+                    )
                 } else {
                     toast(response.errorMessage)
                 }
-            }.onFailure { toast(it.message ?: "操作失败") }
+            }.onFailure { toast(it.message ?: getString(R.string.toast_operation_failed)) }
         }
     }
 
@@ -824,14 +830,18 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
                         isFavorited = true
                         updateActionButtonsDirectly()
                         if (response.data?.isRisk == true) {
-                            Toast.makeText(requireContext(), "三连成功，但账号被标记风控，后续操作可能受限", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                requireContext(),
+                                getString(R.string.toast_triple_success_risk_control),
+                                Toast.LENGTH_LONG
+                            ).show()
                         } else {
                             toast(getString(R.string.triple_action))
                         }
                     } else {
                         toast(response.message)
                     }
-                }.onFailure { toast(it.message ?: "操作失败") }
+                }.onFailure { toast(it.message ?: getString(R.string.toast_operation_failed)) }
         }
     }
 
@@ -853,7 +863,7 @@ class VideoDetailFragment : androidx.fragment.app.Fragment() {
     }
 
     private fun showError(message: String?) {
-        toast(message ?: "加载失败")
+        toast(message ?: getString(R.string.detail_load_failed))
     }
 
     private fun openInHostContainer(

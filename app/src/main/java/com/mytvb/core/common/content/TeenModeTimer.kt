@@ -2,7 +2,9 @@
 
 package com.mytvb.core.common.content
 
+import android.content.Context
 import android.os.SystemClock
+import com.mytvb.R
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.core.common.settings.AppSettingsDataStore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -217,14 +219,20 @@ object TeenModeTimer {
      * 入口拦截：休息中返回带剩余时间的提示文案，否则返回 null 放行。
      * 剩余分钟向上取整（不足 1 分钟按 1 分钟显示）。
      */
-    fun consumeBlockReason(): String? {
+    fun consumeBlockReason(): String? =
+        remainingRestMin()?.let { "请关闭电视注意休息，还需休息 $it 分钟" }
+
+    /** 多语言版本的 [consumeBlockReason]：返回经字符串资源格式化的提示文案。 */
+    fun consumeBlockReason(context: Context): String? =
+        remainingRestMin()?.let { context.getString(R.string.core_teen_rest_needed_format, it) }
+
+    private fun remainingRestMin(): Int? {
         if (!isResting()) return null
         val restStart = appSettings.getCachedLong(KEY_REST_START_MS, 0L)
         val restLimitMs = getRestLimitMin().toLong() * 60_000L
         val remainingMs = (restLimitMs - (System.currentTimeMillis() - restStart)).coerceAtLeast(0L)
         // 向上取整：剩余 30 秒也显示 1 分钟
-        val remainingMin = ((remainingMs + 60_000L - 1) / 60_000L).toInt().coerceAtLeast(1)
-        return "请关闭电视注意休息，还需休息 $remainingMin 分钟"
+        return ((remainingMs + 60_000L - 1) / 60_000L).toInt().coerceAtLeast(1)
     }
 
     /**

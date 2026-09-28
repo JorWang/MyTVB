@@ -65,7 +65,7 @@
             android:paddingTop="@dimen/px5"
             android:paddingEnd="@dimen/px15"
             android:paddingBottom="@dimen/px5"
-            android:text="普通会员"
+            android:text="@string/dialog_normal_member"
             android:textSize="@dimen/px20"
             android:textStyle="bold" />
         <androidx.appcompat.widget.AppCompatTextView

@@ -183,7 +183,7 @@ class LiveRoomAdapter(
             views.textLayer.clearHistoryTrailing()
             views.progressBar.visibility = View.GONE
             views.coverMetaOverlay.bind(
-                playCountText = NumberUtils.formatCount(item.online.toLong()),
+                playCountText = NumberUtils.formatCount(itemView.context, item.online.toLong()),
                 showPlayCount = true,
                 showDanmakuCount = false,
                 durationText = "",

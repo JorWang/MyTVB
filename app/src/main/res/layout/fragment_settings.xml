@@ -256,7 +256,7 @@
                 android:layout_marginLeft="@dimen/px20"
                 android:layout_marginStart="@dimen/px20"
                 android:layout_weight="1"
-                android:text="电视直播"
+                android:text="@string/setting_tv_live"
                 android:textColor="?android:attr/textColorPrimary"
                 android:textSize="@dimen/px30"
                 android:textStyle="bold"/>

@@ -220,7 +220,7 @@ class LivePlayerFragment : Fragment() {
 
             override fun onRefresh() {
                 if (roomId > 0) {
-                    Toast.makeText(requireContext(), "正在刷新", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), getString(R.string.live_toast_refreshing), Toast.LENGTH_SHORT).show()
                     viewModel.refreshLiveStream(roomId)
                 }
             }
@@ -346,7 +346,7 @@ class LivePlayerFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.liveDuration.collect { duration ->
-                binding.playerView.setLiveDuration(if (duration.isNotEmpty()) "直播中：$duration" else "")
+                binding.playerView.setLiveDuration(if (duration.isNotEmpty()) getString(R.string.live_streaming_duration_format, duration) else "")
             }
         }
 

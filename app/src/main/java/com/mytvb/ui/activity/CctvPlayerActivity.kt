@@ -131,7 +131,7 @@ class CctvPlayerActivity : BaseActivity<ActivityCctvPlayerBinding>() {
                 error: WebResourceError
             ) {
                 if (request.isForMainFrame) {
-                    val message = "网页加载失败 ${error.errorCode}"
+                    val message = getString(R.string.activity_web_load_failed_format, error.errorCode)
                     AppLog.e(TAG, "$message url=${request.url} desc=${error.description}")
                     recoverPlayback(playbackSession, message, allowQualityFallback = false)
                 }
@@ -159,7 +159,7 @@ class CctvPlayerActivity : BaseActivity<ActivityCctvPlayerBinding>() {
             ) {
                 AppLog.e(TAG, "webSslError primary=${error.primaryError} url=${error.url}")
                 handler.cancel()
-                recoverPlayback(playbackSession, "网页证书错误", allowQualityFallback = false)
+                recoverPlayback(playbackSession, getString(R.string.activity_web_ssl_error), allowQualityFallback = false)
             }
 
             override fun shouldOverrideUrlLoading(
@@ -388,11 +388,14 @@ class CctvPlayerActivity : BaseActivity<ActivityCctvPlayerBinding>() {
                 "verdict=$verdict extends=$probeExtends/$PLAYBACK_PROBE_MAX_EXTENDS canExtend=$canExtend"
             )
             when (verdict) {
-                "failed" -> recoverPlayback(session, "播放器加载超时", allowQualityFallback = true)
+                "failed" -> recoverPlayback(session, getString(R.string.activity_player_load_timeout), allowQualityFallback = true)
                 else -> if (canExtend) {
                     schedulePlaybackExtension(session, verdict)
                 } else {
-                    val reason = if (verdict == "streaming") "播放器缓冲超时" else "播放器加载超时"
+                    val reason = getString(
+                        if (verdict == "streaming") R.string.activity_player_buffer_timeout
+                        else R.string.activity_player_load_timeout
+                    )
                     recoverPlayback(session, reason, allowQualityFallback = true)
                 }
             }
@@ -422,7 +425,7 @@ class CctvPlayerActivity : BaseActivity<ActivityCctvPlayerBinding>() {
         val channel = channels.getOrNull(currentIndex) ?: return false
         selectedQuality = nextQuality
         updateQualityButton()
-        showChannelHint("已降级到 ${nextQuality.label}")
+        showChannelHint(getString(R.string.activity_quality_downgraded_format, nextQuality.label))
         val scriptUrls = if (usingDynamicScripts) {
             dynamicScriptUrls ?: DEFAULT_SCRIPT_URLS
         } else {
@@ -473,7 +476,7 @@ class CctvPlayerActivity : BaseActivity<ActivityCctvPlayerBinding>() {
                 return@launch
             }
             if (scripts.isEmpty()) {
-                showError("央视播放器脚本更新失败")
+                showError(getString(R.string.activity_cctv_script_update_failed))
                 return@launch
             }
             dynamicScriptUrls = scripts
@@ -655,7 +658,7 @@ class CctvPlayerActivity : BaseActivity<ActivityCctvPlayerBinding>() {
             finish()
         } else {
             exitTime = now
-            Toast.makeText(applicationContext, "再按一次退出播放", Toast.LENGTH_SHORT).show()
+            Toast.makeText(applicationContext, R.string.activity_exit_player_hint, Toast.LENGTH_SHORT).show()
             showController()
         }
     }

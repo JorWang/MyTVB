@@ -140,7 +140,7 @@ class VideoCardMenuDialog(
         binding.buttonUpSpace.setOnClickListener {
             val owner = video.owner
             if (owner == null || owner.mid <= 0L) {
-                toast("UP主信息未加载完成")
+                toast(context.getString(R.string.dialog_up_info_not_loaded))
                 return@setOnClickListener
             }
             dismiss()
@@ -367,14 +367,14 @@ class VideoCardMenuDialog(
                 ?: video.owner?.mid?.takeIf { it > 0L }
                 ?: 0L
             if (currentUserMid <= 0L) {
-                toast("收藏夹信息未加载完成")
+                toast(context.getString(R.string.dialog_favorite_folder_not_loaded))
                 setActionInProgress(false)
                 return@launch
             }
             val folderResult = favoriteRepository.getFavoriteFolders(currentUserMid, rid = video.aid)
             val folders = folderResult.getOrNull()?.data?.list.orEmpty()
             if (folders.isEmpty()) {
-                toast("暂无可用收藏夹")
+                toast(context.getString(R.string.dialog_no_available_favorite_folder))
                 setActionInProgress(false)
                 return@launch
             }
@@ -385,7 +385,7 @@ class VideoCardMenuDialog(
                 folders.firstOrNull()
             }
             if (targetFolder == null) {
-                toast("暂无可用收藏夹")
+                toast(context.getString(R.string.dialog_no_available_favorite_folder))
                 setActionInProgress(false)
                 return@launch
             }
@@ -412,7 +412,7 @@ class VideoCardMenuDialog(
                 }
                 setActionInProgress(false)
             }.onFailure {
-                toast(it.message ?: "操作失败")
+                toast(it.message ?: context.getString(R.string.dialog_action_failed))
                 setActionInProgress(false)
             }
         }
@@ -423,7 +423,7 @@ class VideoCardMenuDialog(
             ?: video.owner?.mid?.takeIf { it > 0L }
             ?: 0L
         if (currentUserMid <= 0L) {
-            toast("收藏夹信息未加载完成")
+            toast(context.getString(R.string.dialog_favorite_folder_not_loaded))
             return
         }
         scope.launch {
@@ -435,7 +435,7 @@ class VideoCardMenuDialog(
                     }
                     val folders = response.data?.list.orEmpty()
                     if (folders.isEmpty()) {
-                        toast("暂无可用收藏夹")
+                        toast(context.getString(R.string.dialog_no_available_favorite_folder))
                         return@onSuccess
                     }
                     val actualIsFavorited = folders.any { it.favState == 1 }
@@ -445,7 +445,7 @@ class VideoCardMenuDialog(
                     }
                     displayFavoriteFolderChooser(folders)
                 }
-                .onFailure { toast(it.message ?: "加载收藏夹失败") }
+                .onFailure { toast(it.message ?: context.getString(R.string.dialog_load_favorite_folder_failed)) }
         }
     }
 
@@ -476,9 +476,9 @@ class VideoCardMenuDialog(
                         renderFavoriteState()
                         toast(
                             if (isFavorited) {
-                                "已收藏到 ${folder.title}"
+                                context.getString(R.string.dialog_favorited_to_format, folder.title)
                             } else {
-                                "已从 ${folder.title} 取消收藏"
+                                context.getString(R.string.dialog_unfavorited_from_format, folder.title)
                             }
                         )
                         if (wasFavorited && !isFavorited) {
@@ -487,7 +487,7 @@ class VideoCardMenuDialog(
                     } else {
                         handleActionError(response.code, response.errorMessage)
                     }
-                }.onFailure { toast(it.message ?: "操作失败") }
+                }.onFailure { toast(it.message ?: context.getString(R.string.dialog_action_failed)) }
             }
         }
 
@@ -671,7 +671,7 @@ class VideoCardMenuDialog(
     private fun checkCsrfAndLogin(): Boolean {
         if (!checkLogin()) return false
         if (sessionGateway.requireCsrfToken() == null) {
-            toast("登录凭据异常，请稍后重试")
+            toast(context.getString(R.string.dialog_credential_error_retry_later))
             return false
         }
         return true
@@ -680,11 +680,11 @@ class VideoCardMenuDialog(
     private fun handleActionError(code: Int, message: String?) {
         when (val error = sessionGateway.classifyActionError(code, message)) {
             is ActionError.SessionExpired -> handleAuthExpired()
-            is ActionError.CsrfMismatch -> toast("操作失败，请稍后重试")
-            is ActionError.RiskControl -> toast("账号被风控了，请到B站官方App或网页端完成验证后再试")
+            is ActionError.CsrfMismatch -> toast(context.getString(R.string.dialog_action_failed_retry_later))
+            is ActionError.RiskControl -> toast(context.getString(R.string.dialog_risk_control_verify_hint))
             is ActionError.FrequencyLimit -> toast(error.message)
             is ActionError.Other -> toast(error.message)
-            is ActionError.CsrfMissing -> toast("登录凭据异常，请稍后重试")
+            is ActionError.CsrfMissing -> toast(context.getString(R.string.dialog_credential_error_retry_later))
         }
     }
 

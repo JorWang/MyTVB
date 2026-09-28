@@ -343,7 +343,7 @@ class VideoAdapter(
             views.textLayer.clearHistoryTrailing()
 
             val ownerName = video.authorName
-            val publishLabel = TimeUtils.formatRelativeTime(if (video.pubDate > 0) video.pubDate else video.createTime)
+            val publishLabel = TimeUtils.formatRelativeTime(views.root.context, if (video.pubDate > 0) video.pubDate else video.createTime)
             val ownerLine = buildOwnerLine(ownerName, publishLabel)
             views.textLayer.setOwner(
                 ownerText = ownerLine,
@@ -359,7 +359,7 @@ class VideoAdapter(
                 views.progressBar.max = duration.toInt()
                 views.progressBar.progress = progress.coerceAtMost(duration).toInt()
                 durationText = if (duration > 3 && progress >= duration - 3) {
-                    "已看完"
+                    views.root.context.getString(R.string.adapter_watched_complete)
                 } else {
                     views.root.context.getString(
                         R.string.video_watch_progress_format,
@@ -373,9 +373,9 @@ class VideoAdapter(
             }
 
             views.coverMetaOverlay.bind(
-                playCountText = NumberUtils.formatCount(video.viewCount),
+                playCountText = views.root.context.let { NumberUtils.formatCount(it, video.viewCount) },
                 showPlayCount = true,
-                danmakuText = NumberUtils.formatCount(video.danmakuCount),
+                danmakuText = views.root.context.let { NumberUtils.formatCount(it, video.danmakuCount) },
                 showDanmakuCount = true,
                 durationText = durationText,
                 showChargeBadge = video.isChargingExclusive,
@@ -403,14 +403,14 @@ class VideoAdapter(
             val durationText = if (video.historyBusiness == "live" && video.historyBadge.isNotBlank()) {
                 video.historyBadge
             } else if (isWatchedComplete(progress, duration)) {
-                "已看完"
+                views.root.context.getString(R.string.adapter_watched_complete)
             } else if (duration > 0) {
                 "${NumberUtils.formatDuration(progress)}/${NumberUtils.formatDuration(duration)}"
             } else {
                 video.historyBadge
             }
             views.textLayer.setHistoryTrailing(
-                timeText = TimeUtils.formatHistoryViewTime(video.historyViewAt),
+                timeText = TimeUtils.formatHistoryViewTime(views.root.context, video.historyViewAt),
                 deviceDrawableRes = HistoryDeviceIcon.resolve(video.historyDevice)?.drawableRes ?: 0
             )
             views.coverMetaOverlay.bind(
@@ -423,7 +423,7 @@ class VideoAdapter(
         }
 
         private fun buildOwnerLine(video: VideoModel): String =
-            buildOwnerLine(video.authorName, TimeUtils.formatRelativeTime(if (video.pubDate > 0) video.pubDate else video.createTime))
+            buildOwnerLine(video.authorName, TimeUtils.formatRelativeTime(views.root.context, if (video.pubDate > 0) video.pubDate else video.createTime))
 
         private fun buildOwnerLine(ownerName: String, publishLabel: String): String = buildString {
             if (ownerName.isNotBlank()) {
@@ -439,8 +439,8 @@ class VideoAdapter(
 
         private fun badgeTextFor(video: VideoModel): String {
             val parts = mutableListOf<String>()
-            if (video.isFollowed) parts.add("已关注")
-            if (video.isPortrait) parts.add("竖屏")
+            if (video.isFollowed) parts.add(views.root.context.getString(R.string.followed))
+            if (video.isPortrait) parts.add(views.root.context.getString(R.string.adapter_portrait))
             return parts.joinToString("|")
         }
 

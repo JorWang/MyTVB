@@ -27,7 +27,7 @@ class LivePlayerActivity : BaseActivity<ActivityPlayerBinding>() {
             com.mytvb.core.common.content.TeenModeTimer.tick()
             if (com.mytvb.core.common.content.TeenModeTimer.isResting()) {
                 val restMin = com.mytvb.core.common.content.TeenModeTimer.getRestLimitMin().coerceAtLeast(1)
-                toast("请关闭电视注意休息，还需休息 $restMin 分钟")
+                toast(getString(R.string.activity_teen_rest_needed_format, restMin))
                 finish()
                 return
             }
@@ -53,7 +53,7 @@ class LivePlayerActivity : BaseActivity<ActivityPlayerBinding>() {
                     finish()
                 } else {
                     exitTime = System.currentTimeMillis()
-                    Toast.makeText(applicationContext, "再按一次退出播放", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(applicationContext, R.string.activity_exit_player_hint, Toast.LENGTH_SHORT).show()
                 }
             }
         })
@@ -77,7 +77,7 @@ class LivePlayerActivity : BaseActivity<ActivityPlayerBinding>() {
 
         fun start(context: Context, roomId: Long) {
             // 青少年模式：休息期间拦截直播入口
-            com.mytvb.core.common.content.TeenModeTimer.consumeBlockReason()?.let {
+            com.mytvb.core.common.content.TeenModeTimer.consumeBlockReason(context)?.let {
                 context.toast(it)
                 return
             }

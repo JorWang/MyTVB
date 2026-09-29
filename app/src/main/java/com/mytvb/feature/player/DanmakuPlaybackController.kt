@@ -226,6 +226,13 @@ internal class DanmakuPlaybackController(
             clear()
             return
         }
+        // 换集防继承：就地切集路径（playEpisode 同季/同bvid、互动视频切节点）不会先调
+        // clear()，发布状态（publishedDanmakuSnapshot/keys）仍属上一集。publishDanmaku
+        // 的 replace 只在 publishGeneration 变化时才重置基底，否则会把新集弹幕 merge 进
+        // 上一集快照——前 N 集弹幕按 progress 在新集时间轴全部复活，越联播越多。
+        if (loadedDanmakuCid != cid) {
+            invalidatePendingPublishes()
+        }
         val loadGeneration = ++danmakuLoadGeneration
         val seekPositionMs = context.pendingSeekPositionMs
         // 标记当前 cid 已进入弹幕加载（与原 VM 在调用 loadDanmaku 前置 loadedDanmakuCid 的语义一致），

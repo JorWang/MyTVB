@@ -2,6 +2,7 @@ package com.mytvb.ui.activity
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Matrix
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
@@ -44,12 +45,27 @@ class SplashActivity : Activity() {
             )
             addView(ImageView(this@SplashActivity).apply {
                 setImageResource(R.mipmap.ic_launcher_loading)
-                scaleType = ImageView.ScaleType.CENTER
+                // MATRIX + min(1, 容器/图) ：容器放得下按原始像素显示，放不下等比缩小，避免低分屏上下裁切
+                scaleType = ImageView.ScaleType.MATRIX
                 layoutParams = FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     Gravity.CENTER
                 )
+                addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+                    val d = drawable ?: return@addOnLayoutChangeListener
+                    val scale = minOf(
+                        1f,
+                        v.width.toFloat() / d.intrinsicWidth,
+                        v.height.toFloat() / d.intrinsicHeight
+                    )
+                    val dx = (v.width - d.intrinsicWidth * scale) / 2f
+                    val dy = (v.height - d.intrinsicHeight * scale) / 2f
+                    imageMatrix = Matrix().apply {
+                        setScale(scale, scale)
+                        postTranslate(dx, dy)
+                    }
+                }
             })
         }
     }

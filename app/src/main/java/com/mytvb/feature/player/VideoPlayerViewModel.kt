@@ -62,6 +62,7 @@ import org.koin.mp.KoinPlatform
 import java.util.concurrent.TimeUnit
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
+import com.mytvb.feature.player.sponsor.AvToBv
 import com.mytvb.feature.player.sponsor.SponsorBlockUseCase
 import com.mytvb.feature.player.sponsor.SponsorSegment
 
@@ -1061,6 +1062,18 @@ class VideoPlayerViewModel(
         interactionProgressRestored = false
         interactionLoadingEdgeId = -1L
         danmakuController.markDmMaskIdle()
+        // 就地切集（同季番剧/同bvid分P）不走 loadVideoInfo 的会话重置段：空降助手若不按
+        // 新集重新准备，片段永远停留在入口那一次（番剧入口 bvid 常为空，等于整季无数据）；
+        // 旧集片段残留还会按新集时间轴误触发跳过。generation 未递增仍为当前有效值。
+        sponsorLoadJob?.cancel()
+        sponsorBlockUseCase.reset()
+        _sponsorSkipState.value = SponsorSkipUiState.Hidden
+        _sponsorSegments.value = emptyList()
+        prepareDeferredSponsorLoad(
+            bvid = currentBvid,
+            cid = currentCid,
+            loadGeneration = videoLoadGeneration
+        )
         _videoSnapshot.value = null
         _error.value = null
         clearPreloadedPlaybackIfDifferent(currentPlayRequestIdentity(), cancelJob = false)
@@ -1107,6 +1120,16 @@ class VideoPlayerViewModel(
         currentEpId = null
         subtitleController.resetSession()
         danmakuController.markDmMaskIdle()
+        // 切剧情节点换 cid：旧节点空降片段按新节点时间轴会误触发跳过，须重置后按新 cid 重新准备。
+        sponsorLoadJob?.cancel()
+        sponsorBlockUseCase.reset()
+        _sponsorSkipState.value = SponsorSkipUiState.Hidden
+        _sponsorSegments.value = emptyList()
+        prepareDeferredSponsorLoad(
+            bvid = currentBvid,
+            cid = currentCid,
+            loadGeneration = videoLoadGeneration
+        )
         clearPreloadedPlaybackIfDifferent(currentPlayRequestIdentity(), cancelJob = false)
         loadPlayUrl(preferLastPlayTime = false)
         loadInteractionInfo(edgeId)
@@ -1732,6 +1755,15 @@ class VideoPlayerViewModel(
         // 提前启动弹幕 view 请求，和 PlayInfo 并行
         danmakuController.preloadViewIfNeeded(loadGeneration)
 
+        // 番剧常以 epId/ss 链接进入（入口 bvid 为空），loadVideoInfo 入口的
+        // prepareDeferredSponsorLoad 已因 bvid 空直接跳过；detail 回填 bvid/cid 后
+        // 补一次准备，第一集才有空降数据。入口已 prepare 的 UGC 场景为幂等覆盖。
+        prepareDeferredSponsorLoad(
+            bvid = currentBvid,
+            cid = currentCid,
+            loadGeneration = loadGeneration
+        )
+
         _videoInfo.value = episodeCatalogBuilder.buildPgcVideoDetail(
             detail = mergedDetail,
             selectedEpisode = selectedEpisode,
@@ -2106,6 +2138,14 @@ class VideoPlayerViewModel(
 
         // 提前启动弹幕 view 请求，和 PlayInfo 并行
         danmakuController.preloadViewIfNeeded(loadGeneration)
+
+        // 收藏夹等入口不带 cid，入口的 prepareDeferredSponsorLoad 因 cid<=0 被跳过；
+        // 续播定位确定分P 后补一次准备。入口已 prepare 的场景为幂等覆盖。
+        prepareDeferredSponsorLoad(
+            bvid = currentBvid,
+            cid = currentCid,
+            loadGeneration = loadGeneration
+        )
 
         if (currentCid <= 0L) {
             _error.value = appContext.getString(R.string.player_error_no_playable_page)
@@ -2739,10 +2779,13 @@ class VideoPlayerViewModel(
         pendingSponsorBvid = null
         pendingSponsorCid = 0L
         pendingSponsorLoadGeneration = 0L
-        if (bvid.isNullOrBlank() || cid <= 0L || !currentSettings.sponsorBlockEnabled) {
+        // 番剧入口 bvid 常为空（epId/ss 链接进来且 season 接口未返回 bvid），用 aid 本地换算兜底
+        val effectiveBvid = bvid?.takeIf { it.isNotBlank() }
+            ?: currentAid?.takeIf { it > 0L }?.let { AvToBv.convert(it) }
+        if (effectiveBvid == null || cid <= 0L || !currentSettings.sponsorBlockEnabled) {
             return
         }
-        pendingSponsorBvid = bvid
+        pendingSponsorBvid = effectiveBvid
         pendingSponsorCid = cid
         pendingSponsorLoadGeneration = loadGeneration
         PlaybackStartupTrace.log(

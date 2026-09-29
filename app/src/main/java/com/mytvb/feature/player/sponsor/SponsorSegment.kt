@@ -76,6 +76,8 @@ data class SponsorSegment(
         const val CATEGORY_FILLER = "filler"
         const val CATEGORY_PADDING = "padding"
         const val CATEGORY_EXCLUSIVE_ACCESS = "exclusive_access"
+        // 拉取类别按用户明确选择只取三类：恰饭、片头、片尾。服务端其余类别
+        // （selfpromo/interaction/preview/music_offtopic/filler 等）不请求。
         val ALL_CATEGORIES = listOf(
             CATEGORY_SPONSOR,
             CATEGORY_INTRO,

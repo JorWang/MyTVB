@@ -100,6 +100,7 @@ class MyPlayerControlView @JvmOverloads constructor(
     private lateinit var buttonRefresh: ImageView
     private lateinit var buttonLine: ImageView
     private lateinit var buttonClose: ImageView
+    private lateinit var buttonBack: ImageView
     private lateinit var textLiveDuration: TextView
     private lateinit var loadingProgressBar: ProgressBar
     private lateinit var titleContainer: View
@@ -196,6 +197,7 @@ class MyPlayerControlView @JvmOverloads constructor(
         buttonRefresh = findViewById(R.id.button_refresh)
         buttonLine = findViewById(R.id.button_line)
         buttonClose = findViewById(R.id.button_close)
+        buttonBack = findViewById(R.id.button_back)
         textLiveDuration = findViewById(R.id.text_live_duration)
         loadingProgressBar = findViewById(R.id.loading_progress_bar)
         centerControls = findViewById(R.id.exo_center_controls)
@@ -222,6 +224,7 @@ class MyPlayerControlView @JvmOverloads constructor(
             buttonRefresh = buttonRefresh,
             buttonLine = buttonLine,
             buttonClose = buttonClose,
+            buttonBack = buttonBack,
             timeBar = timeBar,
             bottomBar = bottomBar
         )
@@ -248,6 +251,7 @@ class MyPlayerControlView @JvmOverloads constructor(
             buttonRefresh,
             buttonLine,
             buttonClose,
+            buttonBack,
             timeBar
         )
         timeBar.setKeyCountIncrement(60)
@@ -356,6 +360,11 @@ class MyPlayerControlView @JvmOverloads constructor(
         }
 
         buttonClose.setOnClickListener {
+            resetHideCallbacks()
+            onVideoSettingChangeListener?.onClose()
+        }
+
+        buttonBack.setOnClickListener {
             resetHideCallbacks()
             onVideoSettingChangeListener?.onClose()
         }

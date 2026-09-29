@@ -8,15 +8,41 @@
     <FrameLayout
         android:layout_gravity="top"
         android:id="@+id/exo_center_controls"
-        android:background="@android:color/transparent"
-        android:paddingTop="@dimen/px15"
-        android:paddingBottom="@dimen/px15"
+        android:background="@drawable/player_top_gradient"
+        android:paddingTop="@dimen/px10"
+        android:paddingBottom="@dimen/px30"
         android:clipToPadding="false"
         android:descendantFocusability="afterDescendants"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingStart="@dimen/px30"
-        android:paddingEnd="@dimen/px30"/>
+        android:paddingEnd="@dimen/px30">
+        <com.mytvb.feature.player.view.PlayerControlButton
+            android:id="@+id/button_back"
+            android:background="@drawable/cell_background"
+            android:padding="@dimen/px18"
+            android:focusable="true"
+            android:clickable="true"
+            android:nextFocusDown="@id/exo_progress"
+            android:nextFocusRight="@id/button_play"
+            android:layout_gravity="start|top"
+            android:layout_width="@dimen/px80"
+            android:layout_height="@dimen/px80"
+            android:src="@drawable/ic_back"
+            android:contentDescription="@string/back"/>
+        <TextClock
+            android:textSize="@dimen/px50"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:layout_gravity="end|top"
+            android:id="@+id/text_clock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/px8"
+            android:layout_marginEnd="@dimen/px20"
+            android:shadowColor="@color/black"
+            android:shadowRadius="7"/>
+    </FrameLayout>
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_gravity="bottom"
         android:orientation="vertical"

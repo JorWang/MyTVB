@@ -14,7 +14,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import com.mytvb.feature.player.sponsor.SponsorProgressMarkerView
-import android.widget.TextClock
 import android.widget.TextView
 import android.widget.Toast
 import com.mytvb.core.common.ext.toast
@@ -137,7 +136,6 @@ class VideoPlayerFragment : Fragment() {
 
     private lateinit var playerView: MyPlayerView
     private lateinit var bottomProgressBar: SponsorProgressMarkerView
-    private lateinit var textClock: TextClock
     private lateinit var textSubtitle: TextView
     private lateinit var textDebug: TextView
     private lateinit var viewNext: View
@@ -484,7 +482,6 @@ class VideoPlayerFragment : Fragment() {
         }
         bottomProgressBar = binding.bottomProgressBar
         slimTimelineRenderer = SlimTimelineRenderer(bottomProgressBar)
-        textClock = binding.textClock
         textSubtitle = binding.textSubtitle
         // 字幕有独立字号设置，不与 UI 文字缩放叠加
         ScaledTextView.exempt(textSubtitle)
@@ -1382,10 +1379,6 @@ class VideoPlayerFragment : Fragment() {
             }
         }
         renderBottomProgressBar()
-        textClock.visibility = when (uiCoordinator.hudState) {
-            PlaybackUiCoordinator.HudState.Chrome -> View.VISIBLE
-            else -> View.GONE
-        }
     }
 
     private fun renderBottomProgressBar() {

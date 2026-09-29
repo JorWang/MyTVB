@@ -1,6 +1,7 @@
 package com.mytvb.ui.activity
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.ViewGroup
@@ -9,6 +10,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.widget.LinearLayout
 import com.mytvb.core.ui.base.ScaledTextView
+import com.mytvb.core.ui.base.UiScale
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -28,6 +30,11 @@ class GaiaVgateActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private val sessionGateway: SessionStateRepository by inject()
     private val webGateway: NetworkWebGateway by inject()
+
+    override fun attachBaseContext(newBase: Context) {
+        UiScale.apply(newBase.resources)
+        super.attachBaseContext(newBase)
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {

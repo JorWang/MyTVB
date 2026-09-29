@@ -35,6 +35,7 @@ import com.mytvb.core.ui.base.BaseFragment
 import com.mytvb.core.ui.base.ScaledTextView
 import com.mytvb.core.ui.base.UiCardSize
 import com.mytvb.core.ui.base.UiTextScale
+import com.mytvb.core.ui.base.UiScale
 import com.mytvb.core.ui.decoration.LinearSpacingItemDecoration
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.core.common.cache.FileCacheManager
@@ -142,8 +143,9 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         private val THEME_OPTIONS = arrayOf("黑色", "白色", "经典主题", "粉色", "蓝色", "紫色", "红色")
         private const val COMMON_POSITION_UI_LANGUAGE = 5
         private const val COMMON_POSITION_RISK_CONTROL = 7
-        private const val COMMON_POSITION_UI_TEXT_SIZE = 12
-        private const val COMMON_POSITION_CARD_SIZE = 13
+        private const val COMMON_POSITION_UI_SCALE = 12
+        private const val COMMON_POSITION_UI_TEXT_SIZE = 13
+        private const val COMMON_POSITION_CARD_SIZE = 14
         private val DM_SMART_FILTER_OPTIONS = arrayOf("关", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
 
         /**
@@ -244,6 +246,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             storedSetting(getString(R.string.give_coin_number), "2"),
             storedSetting(getString(R.string.ipv4_only), "开"),
             storedSetting(getString(R.string.douyin_mode), "关"),
+            storedSetting(getString(R.string.ui_scale), "100"),
             storedSetting(getString(R.string.ui_text_size), "标准"),
             storedSetting(getString(R.string.ui_card_size), "标准")
         )
@@ -575,6 +578,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             9 -> showCommonChoiceDialog(position, KEY_GIVE_COIN_NUMBER, arrayOf("1", "2"))
             10 -> toggleSetting(commonSettings, 10, KEY_IPV4_ONLY)
             11 -> toggleSetting(commonSettings, 11, KEY_DOUYIN_MODE)
+            COMMON_POSITION_UI_SCALE -> showUiScaleChoiceDialog()
             COMMON_POSITION_UI_TEXT_SIZE -> showUiTextScaleDialog()
             COMMON_POSITION_CARD_SIZE -> showCardSizeChoiceDialog()
             commonSettings.lastIndex - 1 -> {
@@ -1168,6 +1172,13 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         applySavedValue(commonSettings, 9, KEY_GIVE_COIN_NUMBER)
         applySavedValue(commonSettings, 10, KEY_IPV4_ONLY)
         applySavedValue(commonSettings, 11, KEY_DOUYIN_MODE)
+        val uiScalePercent = appSettings.getCachedString(UiScale.KEY_UI_SCALE)?.toIntOrNull()
+            ?: UiScale.recommendedPercent(
+                resources.displayMetrics.widthPixels,
+                resources.displayMetrics.heightPixels
+            )
+        commonSettings[COMMON_POSITION_UI_SCALE].value = uiScalePercent.toString()
+        commonSettings[COMMON_POSITION_UI_SCALE].info = uiScalePercent.toString()
         val textScaleName = UiTextScale.nameOf(
             appSettings.getCachedString(UiTextScale.KEY_UI_TEXT_SCALE)?.toIntOrNull()
                 ?: UiTextScale.DEFAULT_PERCENT
@@ -1356,6 +1367,19 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         showStoredChoiceDialog(playerSettings[position].title, playerSettings[position].value, options) { value ->
             updateStoredSetting(playerSettings, position, value)
             appSettings.putStringAsync(key, value)
+        }
+    }
+
+    /** 界面缩放：选完 recreate，全 UI 经 density 通道统一生效（含代码 dp/Toast/Dialog）。 */
+    private fun showUiScaleChoiceDialog() {
+        showStoredChoiceDialog(
+            commonSettings[COMMON_POSITION_UI_SCALE].title,
+            commonSettings[COMMON_POSITION_UI_SCALE].value,
+            UiScale.PERCENTS.map { it.toString() }.toTypedArray()
+        ) { value ->
+            updateStoredSetting(commonSettings, COMMON_POSITION_UI_SCALE, value)
+            appSettings.putStringAsync(UiScale.KEY_UI_SCALE, value)
+            activity?.recreate()
         }
     }
 

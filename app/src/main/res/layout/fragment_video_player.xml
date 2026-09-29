@@ -173,6 +173,6 @@
         android:layout_gravity="bottom"
         android:id="@+id/bottom_progress_bar"
         android:layout_width="match_parent"
-        android:layout_height="2.5dp"
+        android:layout_height="@dimen/px6"
         android:visibility="gone"/>
 </FrameLayout>

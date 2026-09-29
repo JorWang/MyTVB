@@ -27,6 +27,7 @@ import com.mytvb.core.ui.base.BaseFragment
 import com.mytvb.core.ui.base.OnBackPressedHandler
 import com.mytvb.core.ui.base.RecyclerViewFocusRestoreHelper
 import com.mytvb.core.ui.base.UiCardSize
+import com.mytvb.core.ui.base.UiScale
 import com.mytvb.core.ui.base.isWideScreen
 import com.mytvb.core.ui.layout.WrapContentGridLayoutManager
 import com.mytvb.core.ui.decoration.GridSpacingItemDecoration
@@ -614,10 +615,13 @@ class AllSeriesFragment : BaseFragment<FragmentAllSeriesBinding>(), OnBackPresse
             return
         }
         if (fixedSpanCount <= 0) {
-            // 本页按"基准卡宽"自适应排布，卡片大小档位作用于卡宽而非列数
-            val baselineCardWidth = (BASELINE_CARD_WIDTH_PX * UiCardSize.widthFactor()).toInt()
-            fixedSpanCount = ((availableWidth + BASELINE_CARD_SPACING_PX) /
-                (baselineCardWidth + BASELINE_CARD_SPACING_PX))
+            // 本页按"基准卡宽"自适应排布，卡片大小档位作用于卡宽而非列数；
+            // 基准卡宽是物理像素，须乘界面缩放系数与卡内文字(pxN 池)同步放大
+            val cardScale = UiCardSize.widthFactor() * UiScale.scale()
+            val baselineCardWidth = (BASELINE_CARD_WIDTH_PX * cardScale).toInt()
+            val baselineSpacing = (BASELINE_CARD_SPACING_PX * cardScale).toInt()
+            fixedSpanCount = ((availableWidth + baselineSpacing) /
+                (baselineCardWidth + baselineSpacing))
                 .coerceIn(MIN_CONTENT_SPAN_COUNT, maxContentSpanCount)
         }
         val spanCount = fixedSpanCount

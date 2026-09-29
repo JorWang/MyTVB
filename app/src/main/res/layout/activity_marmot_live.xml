@@ -88,7 +88,7 @@
         <!-- 左侧：分组列表（央视/卫视/地方台...）FocusLockRecyclerView 防焦点溢出 -->
         <com.mytvb.core.ui.focus.FocusLockRecyclerView
             android:id="@+id/group_list"
-            android:layout_width="140dp"
+            android:layout_width="@dimen/px315"
             android:layout_height="match_parent"
             android:background="#CC000000"
             android:clipToPadding="false"
@@ -96,12 +96,12 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:overScrollMode="never"
-            android:padding="8dp" />
+            android:padding="@dimen/px18" />
 
         <!-- 右侧：频道列表 -->
         <com.mytvb.core.ui.focus.FocusLockRecyclerView
             android:id="@+id/channel_list"
-            android:layout_width="300dp"
+            android:layout_width="@dimen/px675"
             android:layout_height="match_parent"
             android:background="#AA000000"
             android:clipToPadding="false"
@@ -109,7 +109,7 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:overScrollMode="never"
-            android:padding="8dp" />
+            android:padding="@dimen/px18" />
 
         <!-- 右侧空白区：点击关闭菜单 -->
         <FrameLayout

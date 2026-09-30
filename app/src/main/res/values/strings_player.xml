@@ -69,15 +69,6 @@
     <string name="player_view_count_play_format">%1$s播放</string>
 
     <!-- 播放器：调试浮层 -->
-    <string name="player_debug_resolution_format">分辨率：%1$s</string>
-    <string name="player_debug_video_format">视频：%1$s</string>
-    <string name="player_debug_audio_format">音频：%1$s</string>
-    <string name="player_debug_progress_format">进度：%1$s</string>
-    <string name="player_debug_buffer_format">缓冲：%1$s</string>
-    <string name="player_debug_state_format">状态：%1$s</string>
-    <string name="player_state_buffering">缓冲中</string>
-    <string name="player_state_playing">播放中</string>
-    <string name="player_state_ended">已结束</string>
 
     <!-- 直播 -->
     <string name="live_toast_refreshing">正在刷新</string>

@@ -255,7 +255,6 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
     private lateinit var playerView: MyPlayerView
     private lateinit var bottomProgressBar: SponsorProgressMarkerView
     private lateinit var textSubtitle: TextView
-    private lateinit var textDebug: TextView
     private lateinit var viewNext: View
     private lateinit var viewRelated: View
     private lateinit var recyclerViewRelated: RecyclerView
@@ -271,8 +270,6 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
     private lateinit var overlayUiController: VideoPlayerOverlayController
     private lateinit var resumeHintController: VideoPlayerResumeHintController
 
-    private var latestErrorMessage: String? = null
-    private var latestLoadingState: Boolean = false
     private var latestVideoInfo: VideoDetailModel? = null
     private lateinit var playerSettings: PlayerSettings
     private var latestControllerVisibility: Int = View.GONE
@@ -364,7 +361,6 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
         onPlaybackPositionChanged = { positionMs ->
             playerView.syncDanmakuPosition(positionMs)
             interactionView.onPositionUpdate(positionMs)
-            renderDebugState()
         },
         onPlaybackStalled = { positionMs, stalledMs ->
             recoverFromPlaybackStall(positionMs, stalledMs)
@@ -743,7 +739,6 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
         textSubtitle = binding.textSubtitle
         // 字幕有独立字号设置，不与 UI 文字缩放叠加
         ScaledTextView.exempt(textSubtitle)
-        textDebug = binding.textDebug
         viewNext = binding.viewNext
         viewRelated = binding.viewRelated
         recyclerViewRelated = binding.recyclerViewRelated
@@ -1296,20 +1291,11 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
         }
 
         lifecycleScope.launch {
-            viewModel.isLoading.collect { loading ->
-                latestLoadingState = loading
-                renderDebugState()
-            }
-        }
-
-        lifecycleScope.launch {
             viewModel.error.collect { error ->
-                latestErrorMessage = error
                 if (!error.isNullOrBlank()) {
                     AppLog.e(TAG, "viewModel error: $error")
                 }
                 playerView.setCustomErrorMessage(error)
-                renderDebugState()
             }
         }
 
@@ -1782,26 +1768,6 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
     }
 
 
-    private fun renderDebugState() {
-        val text = PlayerScreenLogic.debugOverlayText(
-            context = this,
-            showDebugInfo = ::playerSettings.isInitialized && playerSettings.showDebugInfo,
-            errorMessage = latestErrorMessage,
-            player = player,
-            loadingText = getString(R.string.loading)
-        )
-        if (text == null) {
-            textDebug.isVisible = false
-            textDebug.text = ""
-        } else {
-            textDebug.isVisible = true
-            textDebug.text = text
-        }
-    }
-
-    private fun buildDebugInfo(p: ExoPlayer): String {
-        return PlayerScreenLogic.buildDebugInfo(this, p)
-    }
     private fun syncPlaybackEnvironment() {
         if (suppressPlaybackEnvironmentSync) {
             return
@@ -1983,7 +1949,6 @@ class PlayerActivity : BaseActivity<FragmentVideoPlayerBinding>() {
         textSubtitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, settings.subtitleTextSizePx.toFloat())
         playerView.setAfterPlayMode(settings.afterPlayMode)
         playerView.setupDanmakuEngine()
-        renderDebugState()
         updateEpisodeNavigationVisibility()
         updateDanmakuSwitchVisibility()
         updatePlaySpeedButtonVisibility()

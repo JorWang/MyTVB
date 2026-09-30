@@ -137,7 +137,6 @@ class VideoPlayerFragment : Fragment() {
     private lateinit var playerView: MyPlayerView
     private lateinit var bottomProgressBar: SponsorProgressMarkerView
     private lateinit var textSubtitle: TextView
-    private lateinit var textDebug: TextView
     private lateinit var viewNext: View
     private lateinit var viewRelated: View
     private lateinit var recyclerViewRelated: RecyclerView
@@ -153,8 +152,6 @@ class VideoPlayerFragment : Fragment() {
     private lateinit var overlayUiController: VideoPlayerOverlayController
     private lateinit var resumeHintController: VideoPlayerResumeHintController
 
-    private var latestErrorMessage: String? = null
-    private var latestLoadingState: Boolean = false
     private var latestVideoInfo: VideoDetailModel? = null
     private lateinit var playerSettings: PlayerSettings
     private var latestControllerVisibility: Int = View.GONE
@@ -203,7 +200,6 @@ class VideoPlayerFragment : Fragment() {
         onPlaybackPositionChanged = { positionMs ->
             playerView.syncDanmakuPosition(positionMs)
             interactionView.onPositionUpdate(positionMs)
-            renderDebugState()
         },
         onPlaybackStalled = { positionMs, stalledMs ->
             recoverFromPlaybackStall(positionMs, stalledMs)
@@ -485,7 +481,6 @@ class VideoPlayerFragment : Fragment() {
         textSubtitle = binding.textSubtitle
         // 字幕有独立字号设置，不与 UI 文字缩放叠加
         ScaledTextView.exempt(textSubtitle)
-        textDebug = binding.textDebug
         viewNext = binding.viewNext
         viewRelated = binding.viewRelated
         recyclerViewRelated = binding.recyclerViewRelated
@@ -1196,21 +1191,17 @@ class VideoPlayerFragment : Fragment() {
                 }
 
                 launch {
-                    viewModel.isLoading.collect { isLoading ->
-                        latestLoadingState = isLoading
-                        renderDebugState()
+                    viewModel.isLoading.collect { _ ->
                     }
                 }
 
                 launch {
                     viewModel.error.collect { error ->
-                        latestErrorMessage = error
                         if (!error.isNullOrBlank()) {
                             AppLog.e(TAG, "viewModel error: $error")
                             playerView.forceOpenShutter()
                         }
                         playerView.setCustomErrorMessage(error)
-                        renderDebugState()
                     }
                 }
 
@@ -1318,27 +1309,6 @@ class VideoPlayerFragment : Fragment() {
         }
     }
 
-    private fun renderDebugState() {
-        val text = PlayerScreenLogic.debugOverlayText(
-            context = requireContext(),
-            showDebugInfo = ::playerSettings.isInitialized && playerSettings.showDebugInfo,
-            errorMessage = latestErrorMessage,
-            player = player,
-            loadingText = getString(R.string.loading)
-        )
-        if (text == null) {
-            textDebug.isVisible = false
-            textDebug.text = ""
-        } else {
-            textDebug.isVisible = true
-            textDebug.text = text
-        }
-    }
-
-    private fun buildDebugInfo(p: ExoPlayer): String {
-        return PlayerScreenLogic.buildDebugInfo(requireContext(), p)
-    }
-
     private fun applyPlayerSettings(settings: PlayerSettings) {
         // 音乐区 1 倍速开关打开且当前是音乐区视频时，忽略默认倍速配置
         val musicZoneNormalSpeed = settings.musicZoneNormalSpeed &&
@@ -1351,7 +1321,6 @@ class VideoPlayerFragment : Fragment() {
         playerView.showHideFfRe(settings.showRewindFastForward)
         textSubtitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, settings.subtitleTextSizePx.toFloat())
         playerView.setAfterPlayMode(settings.afterPlayMode)
-        renderDebugState()
         updateEpisodeNavigationVisibility()
         updateDanmakuSwitchVisibility()
         updatePlaySpeedButtonVisibility()

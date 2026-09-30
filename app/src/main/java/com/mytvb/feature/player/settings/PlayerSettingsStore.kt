@@ -32,7 +32,6 @@ data class PlayerSettings(
     val subtitlePreferredLan: String = "",
     val subtitleTextSizePx: Int = 45,
     val showBottomProgressBar: Boolean = false,
-    val showDebugInfo: Boolean = false,
     val simpleKeyPress: Boolean = false,
     val showRewindFastForward: Boolean = false,
     val showNextPrevious: Boolean = false,
@@ -77,7 +76,6 @@ object PlayerSettingsStore {
     private const val KEY_SUBTITLE_PREFERRED_LAN = "subtitle_preferred_lan"
     private const val KEY_SUBTITLE_TEXT_SIZE = "subtitle_text_size"
     private const val KEY_SHOW_RE_FF = "show_re_ff"
-    private const val KEY_SHOW_DEBUG = "show_debug"
     private const val KEY_SIMPLE_KEY_PRESS = "simple_key_press"
     private const val KEY_SHOW_BOTTOM_PROGRESS_BAR = "show_bottom_progress_bar"
     private const val KEY_SHOW_NEXT_PREVIOUS = "show_next_previous"
@@ -116,8 +114,6 @@ object PlayerSettingsStore {
             append(readSetting(KEY_SUBTITLE_TEXT_SIZE).orEmpty())
             append("|")
             append(readSetting(KEY_SHOW_RE_FF).orEmpty())
-            append("|")
-            append(readSetting(KEY_SHOW_DEBUG).orEmpty())
             append("|")
             append(readSetting(KEY_SIMPLE_KEY_PRESS).orEmpty())
             append("|")
@@ -188,10 +184,6 @@ object PlayerSettingsStore {
                 ?: 45,
             showBottomProgressBar = parseToggle(
                 readSetting(KEY_SHOW_BOTTOM_PROGRESS_BAR),
-                defaultValue = false
-            ),
-            showDebugInfo = parseToggle(
-                readSetting(KEY_SHOW_DEBUG),
                 defaultValue = false
             ),
             simpleKeyPress = parseToggle(

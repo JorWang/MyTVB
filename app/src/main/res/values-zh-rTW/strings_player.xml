@@ -67,15 +67,6 @@
 
     <!-- 播放器：除錯浮層 -->
     <string name="player_view_count_play_format">%1$s播放</string>
-    <string name="player_debug_resolution_format">解析度：%1$s</string>
-    <string name="player_debug_video_format">影片：%1$s</string>
-    <string name="player_debug_audio_format">音訊：%1$s</string>
-    <string name="player_debug_progress_format">進度：%1$s</string>
-    <string name="player_debug_buffer_format">緩衝：%1$s</string>
-    <string name="player_debug_state_format">狀態：%1$s</string>
-    <string name="player_state_buffering">緩衝中</string>
-    <string name="player_state_playing">播放中</string>
-    <string name="player_state_ended">已結束</string>
 
     <!-- 直播 -->
     <string name="live_toast_refreshing">正在重新整理</string>

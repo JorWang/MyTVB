@@ -67,15 +67,6 @@
     <string name="player_view_count_play_format">%1$s views</string>
 
     <!-- Player: debug overlay -->
-    <string name="player_debug_resolution_format">Resolution: %1$s</string>
-    <string name="player_debug_video_format">Video: %1$s</string>
-    <string name="player_debug_audio_format">Audio: %1$s</string>
-    <string name="player_debug_progress_format">Progress: %1$s</string>
-    <string name="player_debug_buffer_format">Buffer: %1$s</string>
-    <string name="player_debug_state_format">State: %1$s</string>
-    <string name="player_state_buffering">Buffering</string>
-    <string name="player_state_playing">Playing</string>
-    <string name="player_state_ended">Ended</string>
 
     <!-- Live -->
     <string name="live_toast_refreshing">Refreshing</string>

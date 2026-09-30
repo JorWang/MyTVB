@@ -96,4 +96,5 @@
     <string name="series_error_unfollow_failed">取消追番失败</string>
     <string name="series_error_timeline_failed">时间线加载失败</string>
     <string name="series_error_recommend_failed">推荐加载失败</string>
+    <string name="player_hdr_unsupported_hint">电视或播放设备可能不支持「%1$s」，若播放异常请切回其他画质</string>
 </resources>

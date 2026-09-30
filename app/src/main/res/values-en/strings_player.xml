@@ -94,4 +94,5 @@
     <string name="series_error_unfollow_failed">Failed to unfollow</string>
     <string name="series_error_timeline_failed">Failed to load timeline</string>
     <string name="series_error_recommend_failed">Failed to load recommendations</string>
+    <string name="player_hdr_unsupported_hint">Your TV or player may not support %1$s. Switch back to another quality if playback fails</string>
 </resources>

@@ -576,7 +576,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             UiCardSize.KEY_UI_CARD_SIZE -> showCardSizeChoiceDialog()
             KEY_IMAGE_QUALITY -> showCommonChoiceDialog(key, arrayOf("低尺寸", "中尺寸", "高尺寸"))
             // —— 播放·默认参数 ——
-            KEY_DEFAULT_VIDEO_QUALITY -> showPlayerChoiceDialog(key, arrayOf("自动", "8K", "杜比视界", "HDR Vivid", "HDR", "4K", "1080P60", "1080P+", "智能修复", "1080P", "720P60", "720P", "480P", "360P", "240P"))
+            KEY_DEFAULT_VIDEO_QUALITY -> showPlayerChoiceDialog(key, arrayOf("自动", "8K 超高清", "杜比视界", "HDR Vivid", "HDR 真彩", "4K 超高清", "1080P 60帧", "1080P 高码率", "智能修复", "1080P 高清", "720P 60帧", "720P 准高清", "480P 标清", "360P 流畅", "240P 极速"))
             KEY_SEAMLESS_QUALITY_SWITCH -> toggle(key)
             KEY_DEFAULT_AUDIO_TRACK -> showPlayerChoiceDialog(key, arrayOf("192kbps", "132kbps", "64kbps", "杜比全景声", "Hi-Res无损"))
             KEY_AUDIO_BALANCE -> showAudioBalanceChoiceDialog()

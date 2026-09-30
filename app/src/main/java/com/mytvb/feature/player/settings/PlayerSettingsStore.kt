@@ -275,20 +275,20 @@ object PlayerSettingsStore {
         return when (value?.trim()?.uppercase()) {
             null, "" -> VideoQualityDefaults.DEFAULT_VIDEO_QUALITY_ID
             "AUTO", "自动" -> null
-            "8K" -> 127
+            "8K 超高清", "8K" -> 127
             "杜比视界", "DOLBYVISION" -> 126
             "HDR VIVID", "HDRVIVID" -> 129
-            "HDR" -> 125
-            "4K" -> 120
-            "1080P60" -> 116
-            "1080P+" -> 112
+            "HDR 真彩", "HDR 真彩色", "HDR" -> 125
+            "4K 超高清", "4K" -> 120
+            "1080P 60帧", "1080P60" -> 116
+            "1080P 高码率", "1080P+ 高码率", "1080P+" -> 112
             "智能修复", "SUPERRESOLUTION" -> 100
-            "1080P" -> 80
-            "720P60" -> 74
-            "720P" -> 64
-            "480P" -> 32
-            "360P" -> 16
-            "240P" -> 6
+            "1080P 高清", "1080P" -> 80
+            "720P 60帧", "720P60" -> 74
+            "720P 准高清", "720P" -> 64
+            "480P 标清", "480P" -> 32
+            "360P 流畅", "360P" -> 16
+            "240P 极速", "240P" -> 6
             else -> value.toIntOrNull()
         }
     }

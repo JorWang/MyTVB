@@ -42,6 +42,7 @@ import com.mytvb.network.session.NetworkSessionGateway
 import com.mytvb.network.response.Base2Response
 import com.mytvb.core.common.log.AppLog
 import com.mytvb.core.common.settings.AppSettingsDataStore
+import com.mytvb.core.ui.base.AppToast
 import com.mytvb.feature.player.cache.PlayerMediaCache
 import com.mytvb.network.cookie.CookieManager
 import com.mytvb.repository.UserRepository
@@ -549,6 +550,8 @@ class VideoPlayerViewModel(
     private var currentCid: Long = 0L
     private var currentSeasonId: Long? = null
     private var currentEpId: Long? = null
+    /** PGC 剧集类型（1番剧 2电影 3纪录片 4国创 5电视剧 6综艺），PGC 详情加载后回填，心跳 sub_type 用。 */
+    private var currentSeasonType: Int = 0
     private var currentPlayInfo: PlayInfoModel? = null
     private var currentGraphVersion: Long = 0L
 
@@ -581,6 +584,9 @@ class VideoPlayerViewModel(
         override val qualityId: Int
             get() = (_selectedQuality.value?.id ?: selectedQualityId ?: currentPlayInfo?.quality ?: 0)
                 .takeIf { it > 0 } ?: 80
+        override val currentSeasonId: Long? get() = this@VideoPlayerViewModel.currentSeasonId
+        override val currentEpId: Long? get() = this@VideoPlayerViewModel.currentEpId
+        override val currentSeasonType: Int get() = this@VideoPlayerViewModel.currentSeasonType
     }
 
     private val danmakuController = DanmakuPlaybackController(
@@ -888,6 +894,7 @@ class VideoPlayerViewModel(
         currentCid = cid
         currentSeasonId = seasonId.takeIf { it > 0L }
         currentEpId = epId.takeIf { it > 0L }
+        currentSeasonType = 0
         pendingSeekPositionMs = seekPositionMs.coerceAtLeast(0L)
         pendingPlayWhenReady = true
         launchStartEpisodeIndex = startEpisodeIndex
@@ -1118,6 +1125,7 @@ class VideoPlayerViewModel(
         didApplyLastPlayPosition = false
         currentSeasonId = null
         currentEpId = null
+        currentSeasonType = 0
         subtitleController.resetSession()
         danmakuController.markDmMaskIdle()
         // 切剧情节点换 cid：旧节点空降片段按新节点时间轴会误触发跳过，须重置后按新 cid 重新准备。
@@ -1145,6 +1153,7 @@ class VideoPlayerViewModel(
         requestedQualityId = quality.id
         _selectedQuality.value = quality
         savePlayerSnapshot()
+        warnHdrUnsupportedIfNecessary(quality.id)
         // 无缝切换：当前挂的是多清晰度 DASH MPD 且目标档在同编码下可用时，
         // 只改 TrackSelection 目标并丢弃旧档缓冲，不重建 MediaSource、不黑屏不重seek。
         val catalog = currentSeamlessCatalog
@@ -1162,6 +1171,23 @@ class VideoPlayerViewModel(
         }
         capturePlaybackSnapshot(currentPositionMs, playWhenReady)
         loadPlayUrl(preferLastPlayTime = false, replaceInPlace = true)
+    }
+
+    /**
+     * HDR/杜比档位选择前的能力提示：解码器与显示 HDR 能力任一缺失时告知用户，
+     * 避免选了杜比视界/HDR 后静默降级或播放失败被误认为「激活不了」。不阻断切换。
+     */
+    private fun warnHdrUnsupportedIfNecessary(qualityId: Int) {
+        val unsupportedNameRes = when (qualityId) {
+            126 -> if (VideoCodecSupport.isDolbyVisionSupported(appContext)) 0 else R.string.setting_quality_dolby_vision
+            125, 129 -> if (VideoCodecSupport.isHdrSupported(appContext)) 0 else R.string.quality_hdr
+            else -> 0
+        }
+        if (unsupportedNameRes != 0) {
+            val name = appContext.getString(unsupportedNameRes)
+            AppToast.show(appContext, appContext.getString(R.string.player_hdr_unsupported_hint, name))
+            AppLog.w(TAG, "hdr capability check failed: qn=$qualityId, may fail or fall back")
+        }
     }
 
     /**
@@ -1717,6 +1743,7 @@ class VideoPlayerViewModel(
             if (shouldFallbackToUgcPlayback(detailResponse)) {
                 currentSeasonId = null
                 currentEpId = null
+                currentSeasonType = 0
                 loadUgcVideoInfo(preferLastPlayTime = preferLastPlayTime, loadGeneration = loadGeneration)
                 return@coroutineScope
             }
@@ -1748,6 +1775,7 @@ class VideoPlayerViewModel(
 
         currentSeasonId = resolvedSeasonId
         currentEpId = selectedEpisode?.epId ?: epId
+        currentSeasonType = mergedDetail.type
         currentCid = selectedEpisode?.cid ?: currentCid
         currentAid = selectedEpisode?.aid?.takeIf { it > 0L } ?: currentAid
         currentBvid = selectedEpisode?.bvid?.takeIf { it.isNotBlank() } ?: currentBvid

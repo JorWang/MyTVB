@@ -35,6 +35,10 @@ internal class PlaybackHeartbeatReporter(
         val durationMs: Long
         val playInfoDurationMs: Long
         val qualityId: Int
+        val currentSeasonId: Long?
+        val currentEpId: Long?
+        /** PGC 剧集类型（1番剧 2电影 3纪录片 4国创 5电视剧 6综艺），0 表示非 PGC 或详情未回填。 */
+        val currentSeasonType: Int
     }
 
     companion object {
@@ -84,6 +88,19 @@ internal class PlaybackHeartbeatReporter(
         val quality = context.qualityId
         val session = ensurePlaybackReportSession()
 
+        val seasonId = context.currentSeasonId?.takeIf { it > 0L }
+        val epId = context.currentEpId?.takeIf { it > 0L }
+        // PGC（番剧/影视）进度只认 type=4 心跳：必须带 epid+sid+sub_type，
+        // 否则服务端不推进「看到第X集」与历史聚合，追番进度会一直停在旧记录。
+        val isPgc = epId != null || seasonId != null
+        val subType = if (isPgc) context.currentSeasonType.takeIf { it in 1..6 } ?: 1 else 0
+        if (isPgc) {
+            AppLog.d(
+                TAG,
+                "heartbeat pgc aid=$aid cid=$cid epid=${epId ?: 0L} sid=${seasonId ?: 0L} sub_type=$subType pos=${positionSec}s"
+            )
+        }
+
         scope.launch {
             reportPlaybackStartIfNeeded(
                 aid = aid,
@@ -91,7 +108,10 @@ internal class PlaybackHeartbeatReporter(
                 mid = mid,
                 csrf = csrf,
                 startTimestampSec = startTimestampSec,
-                session = session
+                session = session,
+                seasonId = seasonId,
+                epId = epId,
+                subType = subType
             )
 
             val params = linkedMapOf(
@@ -101,8 +121,8 @@ internal class PlaybackHeartbeatReporter(
                 "played_time" to positionSec.toString(),
                 "realtime" to realtimeSec.toString(),
                 "real_played_time" to positionSec.toString(),
-                "type" to "3",
-                "sub_type" to "0",
+                "type" to if (isPgc) "4" else "3",
+                "sub_type" to subType.toString(),
                 "dt" to "2",
                 "play_type" to playType.toString(),
                 "refer_url" to buildPlaybackReferUrl(),
@@ -126,6 +146,10 @@ internal class PlaybackHeartbeatReporter(
                 "extra" to buildPlaybackExtra(),
                 "csrf" to csrf
             )
+            if (isPgc) {
+                params["epid"] = (epId ?: 0L).toString()
+                params["sid"] = (seasonId ?: 0L).toString()
+            }
             mid?.let { params["mid"] = it.toString() }
             val queryParams = buildHeartbeatWbiParams(
                 aid = aid,
@@ -160,15 +184,23 @@ internal class PlaybackHeartbeatReporter(
         mid: Long?,
         csrf: String,
         startTimestampSec: Long,
-        session: String
+        session: String,
+        seasonId: Long? = null,
+        epId: Long? = null,
+        subType: Int = 0
     ) {
         if (playbackStartReported || csrf.isBlank()) return
         playbackStartReported = true
+        val isPgc = subType in 1..6
         val nowSec = System.currentTimeMillis() / 1000L
         val queryParams = buildClickH5WbiParams(
             aid = aid,
             startTimestampSec = startTimestampSec,
-            reportTimestampSec = nowSec
+            reportTimestampSec = nowSec,
+            isPgc = isPgc,
+            seasonId = seasonId,
+            epId = epId,
+            subType = subType
         )
         val params = linkedMapOf(
             "aid" to aid.toString(),
@@ -177,8 +209,8 @@ internal class PlaybackHeartbeatReporter(
             "lv" to (sessionGateway.getUserInfo()?.levelInfo?.currentLevel ?: 0).toString(),
             "ftime" to startTimestampSec.toString(),
             "stime" to nowSec.toString(),
-            "type" to "3",
-            "sub_type" to "0",
+            "type" to if (isPgc) "4" else "3",
+            "sub_type" to subType.toString(),
             "refer_url" to buildPlaybackReferUrl(),
             "outer" to "0",
             "statistics" to buildWebStatistics(),
@@ -195,6 +227,10 @@ internal class PlaybackHeartbeatReporter(
             "extra" to buildPlaybackExtra(includePlayerVersion = false),
             "csrf" to csrf
         )
+        if (isPgc) {
+            params["epid"] = (epId ?: 0L).toString()
+            params["sid"] = (seasonId ?: 0L).toString()
+        }
         mid?.let { params["mid"] = it.toString() }
         runCatching {
             sessionGateway.syncAuthState(
@@ -238,25 +274,32 @@ internal class PlaybackHeartbeatReporter(
     private suspend fun buildClickH5WbiParams(
         aid: Long,
         startTimestampSec: Long,
-        reportTimestampSec: Long
+        reportTimestampSec: Long,
+        isPgc: Boolean = false,
+        seasonId: Long? = null,
+        epId: Long? = null,
+        subType: Int = 0
     ): Map<String, String> {
         if (sessionGateway.areWbiKeysStale()) {
             runCatching { sessionGateway.ensureWbiKeys() }
                 .onFailure { AppLog.w(TAG, "clickH5 ensureWbiKeys failed: ${it.message}") }
         }
         val (imgKey, subKey) = sessionGateway.getWbiKeys()
-        return WbiGenerator.generateWbiParams(
-            linkedMapOf(
-                "w_aid" to aid.toString(),
-                "w_part" to "1",
-                "w_ftime" to startTimestampSec.toString(),
-                "w_stime" to reportTimestampSec.toString(),
-                "w_type" to "3",
-                "web_location" to WEB_LOCATION_PLAYER
-            ),
-            imgKey,
-            subKey
+        val params = linkedMapOf(
+            "w_aid" to aid.toString(),
+            "w_part" to "1",
+            "w_ftime" to startTimestampSec.toString(),
+            "w_stime" to reportTimestampSec.toString(),
+            "w_type" to if (isPgc) "4" else "3",
+            "web_location" to WEB_LOCATION_PLAYER
         )
+        if (isPgc) {
+            // 官方 web 端 PGC 起播上报的签名参数镜像：type 参与校验，epid/sid/sub_type 同步入签。
+            params["w_sub_type"] = subType.toString()
+            params["w_sid"] = (seasonId ?: 0L).toString()
+            params["w_epid"] = (epId ?: 0L).toString()
+        }
+        return WbiGenerator.generateWbiParams(params, imgKey, subKey)
     }
 
     private fun ensurePlaybackReportSession(): String {

@@ -52,6 +52,7 @@
     <dimen name="px72">72dip</dimen>
     <dimen name="px80">80dip</dimen>
     <dimen name="px85">85dip</dimen>
+    <dimen name="px88">88dip</dimen>
     <dimen name="px90">90dip</dimen>
     <dimen name="px100">100dip</dimen>
     <dimen name="px105">105dip</dimen>

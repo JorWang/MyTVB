@@ -11,7 +11,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import com.mytvb.core.ui.base.ChoiceDialog
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -354,16 +354,19 @@ class SearchNewFragment :
 
     private fun showOrderDialog() {
         val orders = SearchVideoOrder.values()
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.video_order)
-            .setItems(orders.map { getString(it.nameRes) }.toTypedArray()) { _, which ->
-                currentOrder = orders[which]
-                updateOrderText()
-                if (currentKeyword.isNotBlank()) {
-                    performSearch(currentKeyword)
-                }
+        val labels = orders.map { getString(it.nameRes) }
+        ChoiceDialog.show(
+            context = requireContext(),
+            title = getString(R.string.video_order),
+            options = labels,
+            selectedIndex = orders.indexOf(currentOrder).coerceAtLeast(0)
+        ) { which ->
+            currentOrder = orders[which]
+            updateOrderText()
+            if (currentKeyword.isNotBlank()) {
+                performSearch(currentKeyword)
             }
-            .show()
+        }
         activity?.let { ViewUtils.hideSystemBars(it) }
     }
 

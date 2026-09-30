@@ -27,7 +27,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
+import com.mytvb.core.ui.base.ChoiceDialog
 import androidx.lifecycle.lifecycleScope
 import com.mytvb.R
 import com.mytvb.databinding.ActivityCctvPlayerBinding
@@ -278,20 +278,21 @@ class CctvPlayerActivity : BaseActivity<ActivityCctvPlayerBinding>() {
     private fun showQualityDialog() {
         showController()
         val qualities = CctvQuality.values()
-        val labels = qualities.map { it.label }.toTypedArray()
+        val labels = qualities.map { it.label }
         val checkedIndex = qualities.indexOf(preferredQuality).coerceAtLeast(0)
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.cctv_quality))
-            .setSingleChoiceItems(labels, checkedIndex) { dialog, which ->
-                val nextQuality = qualities.getOrNull(which) ?: return@setSingleChoiceItems
-                dialog.dismiss()
-                if (nextQuality == preferredQuality) return@setSingleChoiceItems
-                preferredQuality = nextQuality
-                selectedQuality = nextQuality
-                updateQualityButton()
-                playCurrentChannel(showHint = true)
-            }
-            .show()
+        ChoiceDialog.show(
+            context = this,
+            title = getString(R.string.cctv_quality),
+            options = labels,
+            selectedIndex = checkedIndex
+        ) { which ->
+            val nextQuality = qualities.getOrNull(which) ?: return@show
+            if (nextQuality == preferredQuality) return@show
+            preferredQuality = nextQuality
+            selectedQuality = nextQuality
+            updateQualityButton()
+            playCurrentChannel(showHint = true)
+        }
     }
 
     private fun switchChannel(delta: Int) {

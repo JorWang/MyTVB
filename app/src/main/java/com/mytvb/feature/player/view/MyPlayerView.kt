@@ -614,7 +614,10 @@ class MyPlayerView @JvmOverloads constructor(
         }
         val title = ScaledTextView(context).apply {
             setTextColor(Color.WHITE)
-            textSize = 22f
+            setTextSize(
+                android.util.TypedValue.COMPLEX_UNIT_PX,
+                resources.getDimension(R.dimen.px44)
+            )
             maxLines = 2
             includeFontPadding = false
             setShadowLayer(6f, 0f, 2f, Color.BLACK)
@@ -1446,7 +1449,10 @@ class MyPlayerView @JvmOverloads constructor(
         val badge = AppCompatTextView(context).apply {
             text = "2x"
             setTextColor(Color.WHITE)
-            textSize = 16f
+            setTextSize(
+                android.util.TypedValue.COMPLEX_UNIT_PX,
+                resources.getDimension(R.dimen.px34)
+            )
             gravity = Gravity.CENTER
             val padHorizontal = dp(10)
             val padVertical = dp(4)
@@ -2611,14 +2617,20 @@ class MyPlayerView @JvmOverloads constructor(
         }
         val positionText = ScaledTextView(context).apply {
             setTextColor(Color.WHITE)
-            textSize = 13f
+            setTextSize(
+                android.util.TypedValue.COMPLEX_UNIT_PX,
+                resources.getDimension(R.dimen.px30)
+            )
             includeFontPadding = false
             typeface = Typeface.DEFAULT_BOLD
         }
         val actionText = ScaledTextView(context).apply {
             text = context.getString(R.string.resume_hint_play_from_start)
             setTextColor(0xFFFF5A9E.toInt())
-            textSize = 13f
+            setTextSize(
+                android.util.TypedValue.COMPLEX_UNIT_PX,
+                resources.getDimension(R.dimen.px30)
+            )
             includeFontPadding = false
             typeface = Typeface.DEFAULT_BOLD
         }

@@ -63,6 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.android.ext.android.inject
 import java.util.Locale
+import com.mytvb.core.ui.base.DialogWindowFit
 
 @Suppress("SpellCheckingInspection")
 class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
@@ -459,7 +460,8 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
         val titleView = ScaledTextView(requireContext()).apply {
             text = getString(R.string.x5_downloading_title)
-            setTextColor(textColor); textSize = 14f
+            setTextColor(textColor)
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px36))
             setTypeface(null, android.graphics.Typeface.BOLD)
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
@@ -484,7 +486,8 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(progressBar)
         val progressText = ScaledTextView(requireContext()).apply {
             text = getString(R.string.connecting)
-            setTextColor(textColor); textSize = 11f
+            setTextColor(textColor)
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px26))
             layoutParams = android.widget.LinearLayout.LayoutParams(
                 android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
                 android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
@@ -492,7 +495,8 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         }
         root.addView(progressText)
         val cancelButton = ScaledTextView(requireContext()).apply {
-            text = getString(R.string.cancel); setTextColor(textColor); textSize = 12f
+            text = getString(R.string.cancel); setTextColor(textColor)
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px32))
             setPadding(resources.getDimensionPixelSize(R.dimen.px16), px14, resources.getDimensionPixelSize(R.dimen.px16), px14)
             isClickable = true; isFocusable = true
             setBackgroundResource(R.drawable.bg_dialog_button)
@@ -504,7 +508,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(cancelButton)
         dialog.setContentView(root)
         dialog.show()
-        dialog.window?.setLayout(resources.getDimensionPixelSize(R.dimen.px800), ViewGroup.LayoutParams.WRAP_CONTENT)
+        DialogWindowFit.apply(dialog.window, requireContext(), resources.getDimensionPixelSize(R.dimen.px800))
 
         updateX5StatusItem(getString(R.string.x5_status_downloading))
 
@@ -853,7 +857,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(ScaledTextView(requireContext()).apply {
             text = getString(R.string.update_found_new)
             setTextColor(textColor)
-            textSize = 14f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px36))
             setTypeface(null, android.graphics.Typeface.BOLD)
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.setMargins(px40, px35, px40, px20)
@@ -878,7 +882,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
                 notes
             )
             setTextColor(textColor)
-            textSize = 12f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px30))
             setLineSpacing(resources.getDimension(R.dimen.px6), 1f)
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.setMargins(px40, px20, px40, 0)
@@ -901,7 +905,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             actionContainer.addView(ScaledTextView(requireContext()).apply {
                 this.text = text
                 setTextColor(textColor)
-                textSize = 12f
+                setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px32))
                 setPadding(px16, px14, px16, px14)
                 isClickable = true
                 isFocusable = true
@@ -915,10 +919,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(actionContainer)
         dialog.setContentView(root)
         dialog.show()
-        dialog.window?.setLayout(
-            resources.getDimensionPixelSize(R.dimen.px800),
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
+        DialogWindowFit.apply(dialog.window, requireContext(), resources.getDimensionPixelSize(R.dimen.px800))
     }
 
     private fun startDownloadApk(apkUrl: String) {
@@ -941,7 +942,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         val titleView = ScaledTextView(requireContext()).apply {
             text = getString(R.string.update_downloading_title)
             setTextColor(textColor)
-            textSize = 14f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px36))
             setTypeface(null, android.graphics.Typeface.BOLD)
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.setMargins(px40, px35, px40, px20)
@@ -968,7 +969,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         val progressText = ScaledTextView(requireContext()).apply {
             text = getString(R.string.connecting)
             setTextColor(textColor)
-            textSize = 11f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px26))
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.setMargins(px40, px14, px40, 0)
             layoutParams = lp
@@ -978,7 +979,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         val cancelButton = ScaledTextView(requireContext()).apply {
             text = getString(R.string.cancel)
             setTextColor(textColor)
-            textSize = 12f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px32))
             setPadding(resources.getDimensionPixelSize(R.dimen.px16), px14, resources.getDimensionPixelSize(R.dimen.px16), px14)
             isClickable = true
             isFocusable = true
@@ -998,10 +999,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
 
         dialog.setContentView(root)
         dialog.show()
-        dialog.window?.setLayout(
-            resources.getDimensionPixelSize(R.dimen.px800),
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
+        DialogWindowFit.apply(dialog.window, requireContext(), resources.getDimensionPixelSize(R.dimen.px800))
 
         downloadJob = updateScope.launch {
             try {
@@ -1443,6 +1441,11 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             }
         }
         dialog.show()
+        DialogWindowFit.apply(
+            dialog.window, requireContext(),
+            resources.getDimensionPixelSize(R.dimen.px800),
+            resources.getDimensionPixelSize(R.dimen.px740)
+        )
     }
 
     /** 视频卡片大小：选完 recreate，所有视频网格经 adaptiveSpanCount 统一生效。 */
@@ -1541,6 +1544,11 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             }
         }
         dialog.show()
+        DialogWindowFit.apply(
+            dialog.window, requireContext(),
+            resources.getDimensionPixelSize(R.dimen.px800),
+            resources.getDimensionPixelSize(R.dimen.px615)
+        )
     }
 
     private fun showListCategory(settings: MutableList<SettingModel>, animate: Boolean) {
@@ -1785,7 +1793,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(ScaledTextView(requireContext()).apply {
             text = getString(R.string.risk_control_verify)
             setTextColor(textColor)
-            textSize = 14f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px36))
             setTypeface(null, android.graphics.Typeface.BOLD)
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.setMargins(px40, px35, px40, px20)
@@ -1802,7 +1810,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(ScaledTextView(requireContext()).apply {
             text = msg
             setTextColor(textColor)
-            textSize = 12f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px30))
             setLineSpacing(resources.getDimension(R.dimen.px6), 1f)
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.setMargins(px40, px20, px40, 0)
@@ -1827,7 +1835,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             actionContainer.addView(ScaledTextView(requireContext()).apply {
                 text = actionText
                 setTextColor(textColor)
-                textSize = 12f
+                setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px32))
                 setPadding(px16, px14, px16, px14)
                 isClickable = true
                 isFocusable = true
@@ -1856,6 +1864,9 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(actionContainer)
         dialog.setContentView(root)
         dialog.show()
+        // 固定弹窗宽度（与其他设置弹窗一致）：wrap_content 在窄屏上会把
+        // 底部按钮排到没空间，最后一个按钮被压窄导致文字逐字竖排
+        DialogWindowFit.apply(dialog.window, requireContext(), resources.getDimensionPixelSize(R.dimen.px800))
         actionContainer.getChildAt(0)?.requestFocus()
     }
 
@@ -1882,7 +1893,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(ScaledTextView(requireContext()).apply {
             text = getString(R.string.edit_voucher_title)
             setTextColor(textColor)
-            textSize = 14f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px36))
             setTypeface(null, android.graphics.Typeface.BOLD)
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.setMargins(px40, px35, px40, px20)
@@ -1905,6 +1916,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             setText(initial)
             setTextColor(textColor)
             setHintTextColor(0x80FFFFFF.toInt())
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px30))
             setPadding(px16, px16, px16, px16)
             setBackgroundResource(R.drawable.bg_search_input)
             nextFocusDownId = firstActionId
@@ -1948,7 +1960,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
             actionContainer.addView(ScaledTextView(requireContext()).apply {
                 this.text = text
                 setTextColor(textColor)
-                textSize = 12f
+                setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px32))
                 setPadding(px16, px14, px16, px14)
                 isClickable = true
                 isFocusable = true
@@ -1976,6 +1988,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         dialog.setContentView(root)
         dialog.setOnShowListener { editText.requestFocus() }
         dialog.show()
+        DialogWindowFit.apply(dialog.window, requireContext(), resources.getDimensionPixelSize(R.dimen.px800))
     }
 
     private fun showMinorProtectionVerifyDialog(onVerified: () -> Unit) {
@@ -2005,7 +2018,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         val codeDisplayView = ScaledTextView(requireContext()).apply {
             text = "? ? ? ? ? ? ? ?"
             setTextColor(textColor)
-            textSize = 16f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px40))
             setTypeface(null, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
             setPadding(px16, px14, px16, px14)
@@ -2074,7 +2087,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(ScaledTextView(requireContext()).apply {
             text = getString(R.string.minor_protection)
             setTextColor(textColor)
-            textSize = 14f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px36))
             setTypeface(null, android.graphics.Typeface.BOLD)
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.setMargins(px40, px35, px40, px20)
@@ -2091,7 +2104,7 @@ class SettingsFragment : BaseFragment<FragmentSettingsBinding>() {
         root.addView(ScaledTextView(requireContext()).apply {
             text = getString(R.string.konami_hint)
             setTextColor(textColor)
-            textSize = 12f
+            setTextSize(TypedValue.COMPLEX_UNIT_PX, resources.getDimension(R.dimen.px30))
             setLineSpacing(resources.getDimension(R.dimen.px6), 1f)
             val lp = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
             lp.setMargins(px40, px20, px40, 0)

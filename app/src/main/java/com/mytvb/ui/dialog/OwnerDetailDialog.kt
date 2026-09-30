@@ -78,6 +78,16 @@ class OwnerDetailDialog(
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
         setContentView(binding.root)
         setCanceledOnTouchOutside(true)
+        // 设计尺寸 px1400×px935，但在低分屏/大缩放系数下换算后的像素可能超过屏幕物理尺寸，
+        // 浮层 window 会被系统钳到屏幕大小而内容仍按原尺寸绘制，左右卡片内容被裁；
+        // 这里取设计尺寸与屏幕 92% 的较小值，布局内部用约束自适应 window 实际大小。
+        val dm = context.resources.displayMetrics
+        val designWidth = context.resources.getDimensionPixelSize(R.dimen.px1400)
+        val designHeight = context.resources.getDimensionPixelSize(R.dimen.px935)
+        window?.setLayout(
+            minOf(designWidth, (dm.widthPixels * 0.92f).toInt()),
+            minOf(designHeight, (dm.heightPixels * 0.92f).toInt())
+        )
         binding.root.setOnClickListener { dismiss() }
         initView()
         bindOwnerHeader()

@@ -26,6 +26,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import com.mytvb.core.ui.base.DialogWindowFit
 
 class UserInfoDialog(context: Context) : AppCompatDialog(context, R.style.DialogTheme), KoinComponent {
 
@@ -38,6 +39,10 @@ class UserInfoDialog(context: Context) : AppCompatDialog(context, R.style.Dialog
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
         setContentView(binding.root)
         setCanceledOnTouchOutside(true)
+        DialogWindowFit.apply(
+            window, context,
+            context.resources.getDimensionPixelSize(R.dimen.px620)
+        )
         binding.root.setOnClickListener { dismiss() }
         bindUserInfo(sessionGateway.getUserInfo())
         bindUserStat(null)

@@ -6,7 +6,6 @@ import android.view.Choreographer
 import android.view.View
 import android.view.ViewTreeObserver
 import androidx.recyclerview.widget.RecyclerView
-import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
@@ -25,6 +24,7 @@ import com.mytvb.event.AppEventHub
 import com.mytvb.network.NetworkManager
 import com.mytvb.network.session.NetworkSessionGateway
 import com.mytvb.repository.UserRepository
+import com.mytvb.core.ui.base.AppToast
 import com.mytvb.core.ui.base.BaseActivity
 import com.mytvb.core.ui.base.OnBackPressedHandler
 import com.mytvb.model.user.UserDetailInfoModel
@@ -686,7 +686,7 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), TabBarView.OnTabClickL
         }
 
         exitTime = System.currentTimeMillis()
-        Toast.makeText(applicationContext, R.string.app_exit, Toast.LENGTH_SHORT).show()
+        AppToast.show(this, getString(R.string.app_exit))
         schedulePostBackFocusRestore()
     }
 

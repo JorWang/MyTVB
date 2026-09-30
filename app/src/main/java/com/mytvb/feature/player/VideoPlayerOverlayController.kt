@@ -33,6 +33,7 @@ import com.mytvb.feature.detail.UserSpaceFragment
 import com.mytvb.core.ui.base.VideoRecyclerViewTuning
 import com.mytvb.core.ui.layout.WrapContentGridLayoutManager
 import com.mytvb.feature.player.view.MyPlayerView
+import com.mytvb.core.ui.base.DialogWindowFit
 
 @UnstableApi
 class VideoPlayerOverlayController(
@@ -148,6 +149,11 @@ class VideoPlayerOverlayController(
             }
         }
         dialog.show()
+        DialogWindowFit.apply(
+            dialog.window, activity,
+            activity.resources.getDimensionPixelSize(R.dimen.px1000),
+            activity.resources.getDimensionPixelSize(R.dimen.px615)
+        )
     }
 
     /**
@@ -307,6 +313,11 @@ class VideoPlayerOverlayController(
             }
         }
         dialog.show()
+        DialogWindowFit.apply(
+            dialog.window, activity,
+            activity.resources.getDimensionPixelSize(R.dimen.px600),
+            activity.resources.getDimensionPixelSize(R.dimen.px935)
+        )
         // 布局完成后兜底设初始焦点；窗口焦点监听在部分路径（触摸唤起）下时机不稳
         recyclerView.post {
             if (dialog.isShowing) {

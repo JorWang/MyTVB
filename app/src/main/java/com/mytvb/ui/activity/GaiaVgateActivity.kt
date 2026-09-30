@@ -47,7 +47,16 @@ class GaiaVgateActivity : AppCompatActivity() {
             return
         }
 
-        status = ScaledTextView(this).apply { text = getString(R.string.activity_verifying_request) }
+        status = ScaledTextView(this).apply {
+            text = getString(R.string.activity_verifying_request)
+            setTextColor(0xFFFFFFFF.toInt())
+            setTextSize(
+                android.util.TypedValue.COMPLEX_UNIT_PX,
+                resources.getDimension(R.dimen.px30)
+            )
+            val pad = resources.getDimensionPixelSize(R.dimen.px20)
+            setPadding(pad, pad, pad, pad)
+        }
         webView = WebView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
@@ -141,9 +150,9 @@ class GaiaVgateActivity : AppCompatActivity() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://static.geetest.com/static/tools/gt.js"></script>
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 12px; background:#1a1a2e; color:#fff; }
-    #captcha { margin-top: 12px; }
-    #btnStart { margin-top: 12px; padding: 10px 14px; font-size: 16px; }
+    body { font-family: sans-serif; margin: 0; padding: 16px; background:#1a1a2e; color:#fff; font-size: 20px; }
+    #captcha { margin-top: 16px; }
+    #btnStart { margin-top: 16px; padding: 12px 20px; font-size: 20px; }
   </style>
 </head>
 <body>

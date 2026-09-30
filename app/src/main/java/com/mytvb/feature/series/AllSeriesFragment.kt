@@ -23,6 +23,7 @@ import com.mytvb.repository.AllSeriesRepository
 import com.mytvb.ui.adapter.AllSeriesFilterAdapter
 import com.mytvb.ui.adapter.SeriesAdapter
 import com.mytvb.ui.adapter.SettingSelectionDialogAdapter
+import com.mytvb.core.ui.base.DialogWindowFit
 import com.mytvb.core.ui.base.BaseFragment
 import com.mytvb.core.ui.base.OnBackPressedHandler
 import com.mytvb.core.ui.base.RecyclerViewFocusRestoreHelper
@@ -356,6 +357,11 @@ class AllSeriesFragment : BaseFragment<FragmentAllSeriesBinding>(), OnBackPresse
             }
         }
         dialog.show()
+        DialogWindowFit.apply(
+            dialog.window, requireContext(),
+            resources.getDimensionPixelSize(R.dimen.px800),
+            resources.getDimensionPixelSize(R.dimen.px615)
+        )
     }
 
     private fun showInfo(imageRes: Int, message: String) {
